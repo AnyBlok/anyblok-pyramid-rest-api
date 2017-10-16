@@ -1,0 +1,6 @@
+-e .
+flake8
+coverage
+WebTest
+sphinx
+sphinxcontrib-httpdomain
