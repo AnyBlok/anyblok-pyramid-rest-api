@@ -1,6 +1,6 @@
 from anyblok_pyramid import current_blok
-from anyblok_pyramid_rest_api import CrudRessource
-from cornice import resource
+from cornice.resource import resource
+from anyblok_pyramid_rest_api.crud_resource import CrudResource
 
 
 @resource(
@@ -8,7 +8,7 @@ from cornice import resource
     path='/blok/{name}',
     installed_blok=current_blok()
 )
-class CrudBlok(CrudRessource):
+class CrudBlok(CrudResource):
     Model = 'Model.System.Blok'
 
 
@@ -17,5 +17,5 @@ class CrudBlok(CrudRessource):
     path='/column/{model}/{name}',
     installed_blok=current_blok()
 )
-class CrudColumn(CrudRessource):
+class CrudColumn(CrudResource):
     Model = 'Model.System.Column'

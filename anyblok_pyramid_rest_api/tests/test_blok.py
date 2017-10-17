@@ -15,13 +15,13 @@ class CrudTestCase(PyramidDBTestCase):
     def setUp(self):
         super(CrudTestCase, self).setUp()
         self.registry = self.init_registry(None)
-        self.registry.upgrade(install=('test-cornice1',))
+        self.registry.upgrade(install=('test_rest_api_2',))
 
 
 class TestCrudBlok(CrudTestCase):
 
     def test_current_blok(self):
-        resp = self.webserver.get('/bloks/', status=200)
+        resp = self.webserver.get('/bloks', status=200)
         self.assertEqual(
             resp.json_body,
             self.registry.System.Blok.query().all().to_dict()

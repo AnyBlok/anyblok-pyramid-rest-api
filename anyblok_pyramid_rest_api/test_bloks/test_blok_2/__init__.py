@@ -8,7 +8,7 @@
 from anyblok.blok import Blok
 
 
-class TestCorniceBlok(Blok):
+class TestBlok2(Blok):
 
     version = '1.0.0'
 
