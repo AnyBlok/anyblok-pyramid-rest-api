@@ -1,18 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# This file is a part of the AnyBlok / Pyramid / REST api project
+#
+#    Copyright (C) 2017 Franck BRET <franckbret@gmail.com>
+#    Copyright (C) 2017 Jean-Sebastien SUZANNE <jssuzanne@anybox.fr>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file,You can
+# obtain one at http://mozilla.org/MPL/2.0/.
 
 """Setup script for anyblok-pyramid-rest-api"""
 
 from setuptools import setup, find_packages
-import os
+from os.path import abspath, dirname, join
 
 
-here = os.path.abspath(os.path.dirname(__file__))
+here = abspath(dirname(__file__))
 
-with open(os.path.join(here, 'README.rst'), 'r', encoding='utf-8') as readme_file:
+with open(join(here, 'README.rst'), 'r',
+          encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
-with open(os.path.join(here, 'CHANGELOG.rst'), 'r', encoding='utf-8') as changelog_file:
+with open(join(here, 'CHANGELOG.rst'), 'r',
+          encoding='utf-8') as changelog_file:
     changelog = changelog_file.read()
 
 requirements = [
@@ -26,19 +36,25 @@ test_requirements = [
     # TODO: put package test requirements here
 ]
 
+anyblok_pyramid_includeme = [
+    'pyramid_cornice=anyblok_pyramid_rest_api.pyramid_config:pyramid_cornice',
+]
+test_bloks = [
+    'test-cornice1=anyblok_pyramid_rest_api.test_bloks.test_cornice_blok1:'
+]
+
 setup(
     name='anyblok_pyramid_rest_api',
     version='0.1.0',
-    description="A blok to build json rest api's",
+    description="Tools to build rest api's",
     long_description=readme + '\n\n' + changelog,
     author="Franck Bret",
     author_email='franckbret@gmail.com',
     url='https://github.com/franckbret/anyblok-pyramid-rest-api',
     packages=find_packages(),
     entry_points={
-        'bloks': [
-            'rest_api_blok=anyblok_pyramid_rest_api.rest_api_blok:Rest_api_blok'
-            ]
+        'anyblok_pyramid.includeme': anyblok_pyramid_includeme,
+        'test_bloks': test_bloks,
     },
     include_package_data=True,
     install_requires=requirements,
