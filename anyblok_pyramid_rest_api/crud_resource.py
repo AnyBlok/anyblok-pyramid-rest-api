@@ -155,7 +155,7 @@ class CrudResource(object):
         """
         """
         model = self.get_model()
-        item = model.insert(**self.request.json_body)
+        item = model.insert(**self.request.validated['body'])
 
         return item.to_dict()
 

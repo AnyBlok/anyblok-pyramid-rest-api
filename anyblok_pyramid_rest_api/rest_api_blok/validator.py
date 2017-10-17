@@ -54,6 +54,27 @@ def deserialize_querystring(params=dict()):
     return dict(filter_by=filter_by, order_by=order_by, limit=limit, offset=offset)
 
 
+def base_validator(request, schema=None, deserializer=None, **kwargs):
+    """ This validator will validate the entire request through extract_cstruct if no schema
+    provided
+    """
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    base = deserializer(request)
+
+    if schema is None:
+        request.validated.update(base)
+    else:
+        result, errors = schema.load(base)
+        if errors:
+            for k,v in errors.items():
+                request.errors.add(
+                        k, 'Validation error for %s' % k, ''.join(map('{}.\n'.format, v)))
+        else:
+            request.validated.update(result)
+
+
 def body_validator(request, schema=None, deserializer=None, **kwargs):
     """ This validator will add the 'body'content to request.validated
     if any marshmallow instanciated schema is provided, otherwise it will do
@@ -74,7 +95,7 @@ def body_validator(request, schema=None, deserializer=None, **kwargs):
     else:
         request.validated.update(result)
 
-def base_validator(request, schema=None, deserializer=None, **kwargs):
+def full_validator(request, schema=None, deserializer=None, **kwargs):
     """ This validator will validate the entire request if any schema is provided.
     Note that in this case the schema should map it's fields to all the fields
     returned by the deserializer.
