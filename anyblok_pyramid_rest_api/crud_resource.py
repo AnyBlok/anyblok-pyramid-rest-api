@@ -178,14 +178,15 @@ class CrudResource(object):
         """
         """
         model = self.get_model()
-        item = model.query().get(self.request.matchdict[self.item_key])
+        path = self.request.validated.get('path').copy()
+        key, value = path.popitem()
+        item = model.query().filter(getattr(model, key) == value).first()
         if item:
-            item.update(**self.request.json_body)
+            item.update(**self.request.validated['body'])
             return item.to_dict()
         else:
-            self.request.errors.add('path',
-                    '404 not found', 'Resource %s with %s=%s does not exist.' % (
-                        self.model, self.item_key, self.request.matchdict[self.item_key]))
+            self.request.errors.add('path', '404 not found',
+                    'Resource %s with %s=%s does not exist.' % (model, key, value))
             self.request.errors.status = 404
 
     @cornice_view(validators=(base_validator,))

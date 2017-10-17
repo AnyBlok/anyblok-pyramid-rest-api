@@ -37,6 +37,9 @@ class TestCrudRestApi(PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plip")
 
+        fail = self.webserver.put_json('/examples/0', {'name': 'plip'}, status=404)
+        self.assertEqual(fail.status_code, 404)
+
     def test_example_delete(self):
         """Example DELETE /examples/{id}"""
         ex = self.create_example()
