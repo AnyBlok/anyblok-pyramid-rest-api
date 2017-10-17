@@ -9,7 +9,7 @@ from anyblok_pyramid_rest_api.crud_resource import CrudResource
     installed_blok=current_blok()
 )
 class CrudBlok(CrudResource):
-    Model = 'Model.System.Blok'
+    model = 'Model.System.Blok'
 
 
 @resource(
@@ -18,4 +18,4 @@ class CrudBlok(CrudResource):
     installed_blok=current_blok()
 )
 class CrudColumn(CrudResource):
-    Model = 'Model.System.Column'
+    model = 'Model.System.Column'
