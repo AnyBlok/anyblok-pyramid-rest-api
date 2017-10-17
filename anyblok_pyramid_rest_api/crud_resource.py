@@ -7,8 +7,9 @@
 from cornice.validators import extract_cstruct
 from cornice.resource import view as cornice_view
 
-from .validator import (deserialize_querystring, base_validator,
-                        FILTER_OPERATORS, ORDER_BY_OPERATORS)
+from .rest_api_blok.validator import (
+    deserialize_querystring, base_validator,
+    FILTER_OPERATORS, ORDER_BY_OPERATORS)
 
 
 class CrudResource(object):
@@ -18,11 +19,7 @@ class CrudResource(object):
 
     >>> @resource(collection_path='/examples', path='/examples/{id}')
     >>> class ExampleResource(CrudResource):
-    >>>     def __init__(self, request, context=None):
-    >>>         CrudResource.__init__(self, request)
-    >>>         self.request = request
-    >>>         self.context = context
-    >>>         self.model = 'Example'
+    >>>     model = 'Model.Example'
 
     """
     model = None
@@ -36,7 +33,7 @@ class CrudResource(object):
         if not self.model:
             raise ValueError("You must provide a 'model' to use CrudResource class")
         try:
-            model = getattr(self.registry, self.model)
+            model = self.registry.get(self.model)
         except KeyError:
             raise KeyError("The model you set on CrudResource class does not exists")
 
@@ -82,7 +79,7 @@ class CrudResource(object):
                     self.request.errors.add('querystring',
                             '400 Bad Request', "Key '%s' does not exist in model" % key)
                     self.request.errors.status = 400
-                    # set key to None to avoid making a query filter based on it 
+                    # set key to None to avoid making a query filter based on it
                     key = None
 
                 if key:

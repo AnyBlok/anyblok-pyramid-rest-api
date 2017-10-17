@@ -4,7 +4,7 @@ from anyblok.blok import Blok
 class TestBlok1(Blok):
 
     version = '0.1.0'
-    required = ['anyblok-core', 'rest_api_blok']
+    required = ['anyblok-core']
 
     @classmethod
     def import_declaration_module(cls):
