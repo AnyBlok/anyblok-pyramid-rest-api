@@ -40,8 +40,8 @@ anyblok_pyramid_includeme = [
     'pyramid_cornice=anyblok_pyramid_rest_api.pyramid_config:pyramid_cornice',
 ]
 test_bloks = [
-    'test_rest_api_1=anyblok_pyramid_rest_api.test_bloks.test_blok_1:TestBlok1'
-    'test_rest_api_2=anyblok_pyramid_rest_api.test_bloks.test_blok_2:TestBlok2'
+    'test_rest_api_1=anyblok_pyramid_rest_api.test_bloks.test_1:TestBlok1',
+    'test_rest_api_2=anyblok_pyramid_rest_api.test_bloks.test_2:TestBlok2',
 ]
 
 setup(
