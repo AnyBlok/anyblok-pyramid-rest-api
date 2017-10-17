@@ -23,9 +23,6 @@ class TestCrudRestApi(PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plop")
 
-        fail = self.webserver.get('/examples/plop')
-        self.assertEqual(response.status_code, 404)
-
     def test_example_collection_post(self):
         """Example POST /examples/"""
         response = self.webserver.post_json('/examples', {'name': 'plip'})
