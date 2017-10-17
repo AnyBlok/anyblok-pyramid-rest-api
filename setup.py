@@ -38,8 +38,11 @@ setup(
     entry_points={
         'bloks': [
             'rest_api_blok=anyblok_pyramid_rest_api.rest_api_blok:Rest_api_blok'
-            ]
-    },
+            ],
+        'test_bloks': [
+            'test_rest_api_1=anyblok_pyramid_rest_api.rest_api_blok.test_bloks.test_blok_1:TestBlok1'
+            ],
+        },
     include_package_data=True,
     install_requires=requirements,
     zip_safe=False,
