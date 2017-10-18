@@ -9,13 +9,16 @@
 from anyblok_pyramid.tests.testcase import PyramidDBTestCase
 
 
-class TestCrudRestApi(PyramidDBTestCase):
-    """ Test pyramid routes with PyramidBlokTestCase"""
+class TestCrudResourceBase(PyramidDBTestCase):
+    """Test CrudResource class from test_bloks/test_1/views.py:ExampleResource
+    This is the basic case, no validators(except the default one,
+    base_validator), no schema.
+    """
 
     blok_entry_points = ('bloks', 'test_bloks',)
 
     def setUp(self):
-        super(TestCrudRestApi, self).setUp()
+        super(TestCrudResourceBase, self).setUp()
         self.registry = self.init_registry(None)
         self.registry.upgrade(install=('test_rest_api_1',))
 
@@ -156,9 +159,75 @@ class TestCrudRestApi(PyramidDBTestCase):
         self.assertEqual(len(response.json_body), 2)
         self.assertEqual(response.json_body[0].get('name'), "dot")
 
+
+class TestCrudResourceBaseValidator(PyramidDBTestCase):
+    """Test CrudResource class from
+    test_bloks/test_1/views.py:ExampleResourceBaseValidator.
+
+    This is the basic case, no validators(except the default one,
+    base_validator), no schema.
+    """
+
+    blok_entry_points = ('bloks', 'test_bloks',)
+
+    def setUp(self):
+        super(TestCrudResourceBaseValidator, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_1',))
+
+    def create_example(self, name="plop"):
+        """Create a dummy example record"""
+        example = self.registry.Example.insert(name=name)
+        return example
+
+    def test_example_get(self):
+        """Example GET /basevalidator/examples/{id}"""
+        ex = self.create_example()
+        response = self.webserver.get('/basevalidator/examples/%s' % ex.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body.get('name'), "plop")
+
+    def test_example_get_bad_value_in_path(self):
+        """Example FAILED GET /basevalidator/examples/{id}"""
+        self.create_example()
+        fail = self.webserver.get('/basevalidator/examples/0', status=404)
+        self.assertEqual(fail.status_code, 404)
+
+
+class TestCrudServiceBase(PyramidDBTestCase):
+    """Test Service from test_bloks/test_1/views.py:example_service
+    This is the basic case, no validators, no schema.
+    """
+
+    blok_entry_points = ('bloks', 'test_bloks',)
+
+    def setUp(self):
+        super(TestCrudServiceBase, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_1',))
+
+    def create_example(self, name="plop"):
+        """Create a dummy example record"""
+        example = self.registry.Example.insert(name=name)
+        return example
+
     def test_example_service_get(self):
         """Example GET /anothers/{id}"""
         ex = self.create_example()
         response = self.webserver.get('/anothers/%s' % ex.id)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plop")
+
+    def test_example_service_put(self):
+        """Example PUT /anothers/{id}"""
+        ex = self.create_example()
+        response = self.webserver.put_json(
+                '/anothers/%s' % ex.id, {'name': 'plip'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body.get('name'), "plip")
+
+    def test_example_service_post(self):
+        """Example POST /anothers/"""
+        response = self.webserver.post_json('/anothers', {'name': 'plip'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body.get('name'), "plip")
