@@ -11,14 +11,11 @@
 # TODO: Manage relationship
 # TODO: Response objects serialization
 """
-
-from cornice.validators import extract_cstruct
 from cornice.resource import view as cornice_view
 from anyblok.registry import RegistryManagerException
+from .query import update_query_filter_by, update_query_order_by
 
-from .validator import (
-    deserialize_querystring, base_validator,
-    FILTER_OPERATORS, ORDER_BY_OPERATORS)
+from .validator import deserialize_querystring, base_validator
 
 
 class CrudResource(object):
@@ -76,84 +73,10 @@ class CrudResource(object):
         if self.request.params:
             # TODO: Implement schema validation to use request.validated
             parsed_params = deserialize_querystring(self.request.params)
-
-            for item in parsed_params["filter_by"]:
-                op = item.get('op')
-                key = item.get('key')
-                value = item.get('value')
-                # Is operator valid?
-                if op not in FILTER_OPERATORS:
-                    self.request.errors.add(
-                        'querystring',
-                        '400 Bad Request', 'Filter %s does not exist.' % op)
-                    self.request.errors.status = 400
-                # Column exists?
-                if key not in model.fields_description().keys():
-                    self.request.errors.add(
-                        'querystring',
-                        '400 Bad Request',
-                        "Key '%s' does not exist in model" % key)
-                    self.request.errors.status = 400
-                    # set key to None to avoid making a query filter based
-                    # on it
-                    key = None
-
-                if key:
-                    if op == "eq":
-                        Q = Q.filter(getattr(model, key) == value)
-                    if op == "like":
-                        Q = Q.filter(getattr(model, key).like(
-                            "%" + value + "%"))
-                    if op == "ilike":
-                        Q = Q.filter(getattr(model, key).ilike(
-                            "%" + value + "%"))
-                    if op == "lt":
-                        Q = Q.filter(getattr(model, key) < value)
-                    if op == "lte":
-                        Q = Q.filter(getattr(model, key) <= value)
-                    if op == "gt":
-                        Q = Q.filter(getattr(model, key) > value)
-                    if op == "gte":
-                        Q = Q.filter(getattr(model, key) >= value)
-                    if op == "in":
-                        # ensure we have a comma separated value string...
-                        values = value.split(',')
-                        if values:
-                            Q = Q.filter(getattr(model, key) in values)
-                        else:
-                            self.request.errors.add(
-                                'querystring', '400 Bad Request',
-                                ('Filter %s except a comma separated string '
-                                 'value' % op))
-                            self.request.errors.status = 400
-                    if op == "not":
-                        # TODO: exclusion
-                        self.request.errors.add(
-                            'querystring', '400 Bad Request',
-                            "'%s' filter not implemented yet" % op)
-                        self.request.errors.status = 400
-
-            # ORDER_BY
-            for item in parsed_params["order_by"]:
-                op = item.get('op')
-                key = item.get('key')
-                # Is operator valid?
-                if op not in ORDER_BY_OPERATORS:
-                    self.request.errors.add(
-                        'querystring', '400 Bad Request',
-                        "ORDER_by operator '%s' does not exist." % op)
-                    self.request.errors.status = 400
-                # Column exists?
-                if key not in model.fields_description().keys():
-                    self.request.errors.add(
-                        'querystring', '400 Bad Request',
-                        "Key '%s' does not exist in model" % key)
-                    self.request.errors.status = 400
-
-                if op == "asc":
-                    Q = Q.order_by(getattr(model, key).asc())
-                if op == "desc":
-                    Q = Q.order_by(getattr(model, key).desc())
+            Q = update_query_filter_by(
+                self.request, Q, model, parsed_params['filter_by'])
+            Q = update_query_order_by(
+                self.request, Q, model, parsed_params['order_by'])
             # LIMIT
             if parsed_params.get('limit', None):
                 Q = Q.limit(int(parsed_params['limit']))
