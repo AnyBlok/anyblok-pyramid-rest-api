@@ -1,4 +1,4 @@
-from anyblok_pyramid.tests.testcase import PyramidBlokTestCase, PyramidDBTestCase
+from anyblok_pyramid.tests.testcase import PyramidDBTestCase
 
 
 class TestCrudRestApi(PyramidDBTestCase):
@@ -23,9 +23,6 @@ class TestCrudRestApi(PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plop")
 
-        fail = self.webserver.get('/examples/plop')
-        self.assertEqual(response.status_code, 404)
-
     def test_example_collection_post(self):
         """Example POST /examples/"""
         response = self.webserver.post_json('/examples', {'name': 'plip'})
@@ -40,6 +37,13 @@ class TestCrudRestApi(PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plip")
 
+    def test_example_put_bad_value_in_path(self):
+        """Example PUT /examples/{id}"""
+        self.create_example()
+        fail = self.webserver.put_json(
+            '/examples/0', {'name': 'plip'}, status=404)
+        self.assertEqual(fail.status_code, 404)
+
     def test_example_delete(self):
         """Example DELETE /examples/{id}"""
         ex = self.create_example()
@@ -49,9 +53,15 @@ class TestCrudRestApi(PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json_body), 0)
 
+    def test_example_delete_bad_value_in_path(self):
+        """Example DELETE /examples/{id}"""
+        self.create_example()
+        fail = self.webserver.delete('/examples/0', status=404)
+        self.assertEqual(fail.status_code, 404)
+
     def test_example_collection_get(self):
         """Example collection GET /examples"""
-        ex = self.create_example()
+        self.create_example()
         response = self.webserver.get('/examples')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json_body), 1)
@@ -131,3 +141,10 @@ class TestCrudRestApi(PyramidDBTestCase):
         self.assertEqual(int(response.headers.get('X-Total-Records')), 5)
         self.assertEqual(len(response.json_body), 2)
         self.assertEqual(response.json_body[0].get('name'), "dot")
+
+    def test_example_service_get(self):
+        """Example GET /anothers/{id}"""
+        ex = self.create_example()
+        response = self.webserver.get('/anothers/%s' % ex.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body.get('name'), "plop")

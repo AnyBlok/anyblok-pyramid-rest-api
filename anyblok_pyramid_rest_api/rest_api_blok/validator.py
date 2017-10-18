@@ -55,6 +55,61 @@ def deserialize_querystring(params=dict()):
 
 
 def base_validator(request, schema=None, deserializer=None, **kwargs):
+    """ Validate the entire request through cornice.validators.extract_cstruct if no schema
+    provided
     """
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    base = deserializer(request)
+
+    if schema is None:
+        request.validated.update(base)
+    else:
+        result, errors = schema.load(base)
+        if errors:
+            for k,v in errors.items():
+                request.errors.add(
+                        k, 'Validation error for %s' % k, ''.join(map('{}.\n'.format, v)))
+        else:
+            request.validated.update(result)
+
+
+def body_validator(request, schema=None, deserializer=None, **kwargs):
+    """ This validator will add the 'body'content to request.validated
+    if any marshmallow instanciated schema is provided, otherwise it will do
+    nothing.
     """
-    pass
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    if schema is None:
+        return
+
+    body = deserializer(request).get('body', {})
+    result, errors = schema.load(body)
+    if errors:
+        for k,v in errors.items():
+            request.errors.add('body',
+                    'Validation error for %s' % k, ''.join(map('{}.\n'.format, v)))
+    else:
+        request.validated.update(result)
+
+def full_validator(request, schema=None, deserializer=None, **kwargs):
+    """ This validator will validate the entire request if any schema is provided.
+    Note that in this case the schema should map it's fields to all the fields
+    returned by the deserializer.
+    """
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    if schema is None:
+        return
+
+    full = deserializer(request)
+    result, errors = schema.load(full)
+    if errors:
+        for k,v in errors.items():
+            request.errors.add(k, 'Validation error for %s' % k, ''.join(map('{}.\n'.format, v)))
+    else:
+        request.validated.update(result)
