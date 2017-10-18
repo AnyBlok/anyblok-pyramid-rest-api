@@ -6,6 +6,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 from anyblok_pyramid.tests.testcase import PyramidDBTestCase
+from anyblok.registry import RegistryManagerException
 
 
 class TestCrudBlok(PyramidDBTestCase):
@@ -39,3 +40,8 @@ class TestCrudBlok(PyramidDBTestCase):
             'remote_model': None,
             'unique': None
         })
+
+    def test_bad_model(self):
+        self.init_registry(None)
+        with self.assertRaises(RegistryManagerException):
+            self.webserver.get('/bad/model')

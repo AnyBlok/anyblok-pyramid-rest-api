@@ -34,3 +34,11 @@ class CrudBlok2(CrudResource):
 )
 class CrudColumn(CrudResource):
     model = 'Model.System.Column'
+
+
+@resource(
+    collection_path='/bad/model',
+    path='/bad/model/{id}',
+)
+class CrudBadModel(CrudResource):
+    model = 'Model.Bad.Model'
