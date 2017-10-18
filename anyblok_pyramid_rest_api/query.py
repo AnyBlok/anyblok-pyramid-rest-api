@@ -38,6 +38,40 @@ def update_query_filter_by_add_filter(request, query, model, key, op, value):
     request.errors.status = 400
 
 
+def get_remote_model_for(Model, fieldname):
+    registry = Model.registry
+    Field = registry.System.Field
+    query = Field.query()
+    models = [Model.__registry_name__]
+    for base in Model.__anyblok_bases__:
+        models.append(base.__registry_name__)
+
+    query = query.filter(Field.model.in_(models))
+    query = query.filter(Field.name == fieldname)
+    field = query.first()
+    if field.remote_model:
+        return registry.get(field.remote_model)
+
+    return None
+
+
+def rec_filter(query, model, keys):
+    key = keys[0]
+    if key not in model.fields_description():
+        return '%r not exist in model %s.' % (key, model)
+
+    if len(keys) == 1:
+        return (query, model, keys[0])
+    else:
+        field = getattr(model, keys[0])
+        query = query.join(field)
+        model = get_remote_model_for(model, keys[0])
+        if model is None:
+            return '%r in model %s is not a relationship.' % (key, model)
+
+        return rec_filter(query, model, keys[1:])
+
+
 def update_query_filter_by(request, query, model, filter_by):
     for item in filter_by:
         op = item.get('op')
@@ -49,18 +83,25 @@ def update_query_filter_by(request, query, model, filter_by):
                 'querystring',
                 '400 Bad Request', 'Filter %r does not exist.' % op)
             request.errors.status = 400
-        # Column exists?
-        elif key not in model.fields_description().keys():
+        elif not key:
             request.errors.add(
                 'querystring',
                 '400 Bad Request',
-                "Key '%s' does not exist in model" % key)
+                "No key filled" % key)
             request.errors.status = 400
-            # set key to None to avoid making a query filter based
-            # on it
         else:
-            query = update_query_filter_by_add_filter(
-                request, query, model, key, op, value)
+            res = rec_filter(query, model, key.split('.'))
+            if isinstance(res, tuple):
+                _query, _model, _key = res
+                print(res)
+                query = update_query_filter_by_add_filter(
+                    request, _query, _model, _key, op, value)
+            else:
+                request.errors.add(
+                    'querystring',
+                    '400 Bad Request',
+                    "Filter %r: %s" % (key, res))
+                request.errors.status = 400
 
     return query
 
