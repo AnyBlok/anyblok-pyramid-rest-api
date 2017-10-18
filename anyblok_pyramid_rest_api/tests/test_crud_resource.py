@@ -131,3 +131,10 @@ class TestCrudRestApi(PyramidDBTestCase):
         self.assertEqual(int(response.headers.get('X-Total-Records')), 5)
         self.assertEqual(len(response.json_body), 2)
         self.assertEqual(response.json_body[0].get('name'), "dot")
+
+    def test_example_service_get(self):
+        """Example GET /anothers/{id}"""
+        ex = self.create_example()
+        response = self.webserver.get('/anothers/%s' % ex.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body.get('name'), "plop")

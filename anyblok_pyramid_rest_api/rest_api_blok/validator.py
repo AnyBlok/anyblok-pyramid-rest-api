@@ -55,7 +55,7 @@ def deserialize_querystring(params=dict()):
 
 
 def base_validator(request, schema=None, deserializer=None, **kwargs):
-    """ This validator will validate the entire request through extract_cstruct if no schema
+    """ Validate the entire request through cornice.validators.extract_cstruct if no schema
     provided
     """
     if deserializer is None:
