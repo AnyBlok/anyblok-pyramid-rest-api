@@ -1,17 +1,29 @@
+# This file is a part of the AnyBlok / Pyramid / REST api project
+#
+#    Copyright (C) 2017 Franck Bret <franckbret@gmail.com>
+#    Copyright (C) 2017 Jean-Sebastien SUZANNE <jssuzanne@anybox.fr>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file,You can
+# obtain one at http://mozilla.org/MPL/2.0/.
 from cornice.validators import extract_cstruct
 
 
-FILTER_OPERATORS = ['eq', 'like', 'ilike', 'lt', 'lte', 'gt', 'gte', 'in', 'not']
+FILTER_OPERATORS = [
+    'eq', 'like', 'ilike', 'lt', 'lte', 'gt', 'gte', 'in', 'not']
 ORDER_BY_OPERATORS = ['asc', 'desc']
 
 
 def deserialize_querystring(params=dict()):
     """
-    Given a querystring parameters dict, returns a new dict that will be used to build
-    query filters.
-    The logic is to keep everything but transform some key, values to build database queries.
-    Item whose key starts with 'filter[*' will be parsed to a key, operator, value dict (filter_by).
-    Item whose key starts with 'order_by[*' will be parse to a key, operator dict(order_by).
+    Given a querystring parameters dict, returns a new dict that will be used
+    to build query filters.
+    The logic is to keep everything but transform some key, values to build
+    database queries.
+    Item whose key starts with 'filter[*' will be parsed to a key, operator,
+    value dict (filter_by).
+    Item whose key starts with 'order_by[*' will be parse to a key, operator
+    dict(order_by).
     'limit' and 'offset' are kept as is.
     All other keys are added to 'filter_by' with 'eq' as default operator.
 
@@ -48,15 +60,16 @@ def deserialize_querystring(params=dict()):
                 # TODO check to allow positive integer only
                 offset = int(v)
             else:
-                # Unknown key, add it as a filter with 'eq' operator 
+                # Unknown key, add it as a filter with 'eq' operator
                 filter_by.append(dict(key=k, op='eq', value=v))
 
-    return dict(filter_by=filter_by, order_by=order_by, limit=limit, offset=offset)
+    return dict(filter_by=filter_by, order_by=order_by, limit=limit,
+                offset=offset)
 
 
 def base_validator(request, schema=None, deserializer=None, **kwargs):
-    """ Validate the entire request through cornice.validators.extract_cstruct if no schema
-    provided
+    """ Validate the entire request through cornice.validators.extract_cstruct
+    if no schema provided
     """
     if deserializer is None:
         deserializer = extract_cstruct
@@ -68,9 +81,11 @@ def base_validator(request, schema=None, deserializer=None, **kwargs):
     else:
         result, errors = schema.load(base)
         if errors:
-            for k,v in errors.items():
+            for k, v in errors.items():
                 request.errors.add(
-                        k, 'Validation error for %s' % k, ''.join(map('{}.\n'.format, v)))
+                    k,
+                    'Validation error for %s' % k,
+                    ''.join(map('{}.\n'.format, v)))
         else:
             request.validated.update(result)
 
@@ -89,11 +104,14 @@ def body_validator(request, schema=None, deserializer=None, **kwargs):
     body = deserializer(request).get('body', {})
     result, errors = schema.load(body)
     if errors:
-        for k,v in errors.items():
-            request.errors.add('body',
-                    'Validation error for %s' % k, ''.join(map('{}.\n'.format, v)))
+        for k, v in errors.items():
+            request.errors.add(
+                'body',
+                'Validation error for %s' % k,
+                ''.join(map('{}.\n'.format, v)))
     else:
         request.validated.update(result)
+
 
 def full_validator(request, schema=None, deserializer=None, **kwargs):
     """ This validator will validate the entire request if any schema is provided.
@@ -109,7 +127,9 @@ def full_validator(request, schema=None, deserializer=None, **kwargs):
     full = deserializer(request)
     result, errors = schema.load(full)
     if errors:
-        for k,v in errors.items():
-            request.errors.add(k, 'Validation error for %s' % k, ''.join(map('{}.\n'.format, v)))
+        for k, v in errors.items():
+            request.errors.add(
+                k, 'Validation error for %s' % k,
+                ''.join(map('{}.\n'.format, v)))
     else:
         request.validated.update(result)

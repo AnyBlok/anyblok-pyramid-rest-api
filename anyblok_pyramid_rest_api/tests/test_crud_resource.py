@@ -1,4 +1,12 @@
-from anyblok_pyramid.tests.testcase import PyramidBlokTestCase, PyramidDBTestCase
+# This file is a part of the AnyBlok / Pyramid / REST api project
+#
+#    Copyright (C) 2017 Franck Bret <franckbret@gmail.com>
+#    Copyright (C) 2017 Jean-Sebastien SUZANNE <jssuzanne@anybox.fr>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file,You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+from anyblok_pyramid.tests.testcase import PyramidDBTestCase
 
 
 class TestCrudRestApi(PyramidDBTestCase):
@@ -23,6 +31,12 @@ class TestCrudRestApi(PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plop")
 
+    def test_example_get_bad_value_in_path(self):
+        """Example FAILED GET /examples/{id}"""
+        self.create_example()
+        fail = self.webserver.get('/examples/0', status=404)
+        self.assertEqual(fail.status_code, 404)
+
     def test_example_collection_post(self):
         """Example POST /examples/"""
         response = self.webserver.post_json('/examples', {'name': 'plip'})
@@ -37,7 +51,11 @@ class TestCrudRestApi(PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plip")
 
-        fail = self.webserver.put_json('/examples/0', {'name': 'plip'}, status=404)
+    def test_example_put_bad_value_in_path(self):
+        """Example FAILED PUT /examples/{id}"""
+        self.create_example()
+        fail = self.webserver.put_json(
+            '/examples/0', {'name': 'plip'}, status=404)
         self.assertEqual(fail.status_code, 404)
 
     def test_example_delete(self):
@@ -49,9 +67,15 @@ class TestCrudRestApi(PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json_body), 0)
 
+    def test_example_delete_bad_value_in_path(self):
+        """Example FAILED DELETE /examples/{id}"""
+        self.create_example()
+        fail = self.webserver.delete('/examples/0', status=404)
+        self.assertEqual(fail.status_code, 404)
+
     def test_example_collection_get(self):
         """Example collection GET /examples"""
-        ex = self.create_example()
+        self.create_example()
         response = self.webserver.get('/examples')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json_body), 1)
