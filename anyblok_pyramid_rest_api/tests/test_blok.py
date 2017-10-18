@@ -8,21 +8,34 @@
 from anyblok_pyramid.tests.testcase import PyramidDBTestCase
 
 
-class CrudTestCase(PyramidDBTestCase):
+class TestCrudBlok(PyramidDBTestCase):
 
     blok_entry_points = ('bloks', 'test_bloks')
 
-    def setUp(self):
-        super(CrudTestCase, self).setUp()
-        self.registry = self.init_registry(None)
-        self.registry.upgrade(install=('test_rest_api_2',))
+    def test_predicate(self):
+        registry = self.init_registry(None)
+        self.webserver.get('/bloks', status=404)
+        self.webserver.get('/bloks2', status=200)
+        registry.upgrade(install=('test_rest_api_2',))
+        self.webserver.get('/bloks', status=200)
+        self.webserver.get('/bloks2', status=200)
 
-
-class TestCrudBlok(CrudTestCase):
-
-    def test_current_blok(self):
-        resp = self.webserver.get('/bloks', status=200)
-        self.assertEqual(
-            resp.json_body,
-            self.registry.System.Blok.query().all().to_dict()
-        )
+    def test_multi_primary_keys(self):
+        registry = self.init_registry(None)
+        registry.upgrade(install=('test_rest_api_2',))
+        resp = self.webserver.get(
+            '/column/Model.System.Model/name', status=200)
+        self.assertEqual(resp.json_body, {
+            'autoincrement': False,
+            'code': 'system_model.name',
+            'entity_type': 'Model.System.Column',
+            'foreign_key': None,
+            'ftype': 'String',
+            'label': 'Name',
+            'model': 'Model.System.Model',
+            'name': 'name',
+            'nullable': False,
+            'primary_key': True,
+            'remote_model': None,
+            'unique': None
+        })
