@@ -14,6 +14,7 @@
 
 from cornice.validators import extract_cstruct
 from cornice.resource import view as cornice_view
+from anyblok.registry import RegistryManagerException
 
 from .validator import (
     deserialize_querystring, base_validator,
@@ -42,8 +43,8 @@ class CrudResource(object):
                 "You must provide a 'model' to use CrudResource class")
         try:
             model = self.registry.get(self.model)
-        except KeyError:
-            raise KeyError(
+        except RegistryManagerException:
+            raise RegistryManagerException(
                 "The model you set on CrudResource class does not exists")
 
         return model
