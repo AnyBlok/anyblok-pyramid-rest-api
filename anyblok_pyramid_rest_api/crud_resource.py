@@ -15,7 +15,7 @@
 from cornice.validators import extract_cstruct
 from cornice.resource import view as cornice_view
 
-from .rest_api_blok.validator import (
+from .validator import (
     deserialize_querystring, base_validator,
     FILTER_OPERATORS, ORDER_BY_OPERATORS)
 
