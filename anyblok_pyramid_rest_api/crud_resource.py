@@ -1,3 +1,12 @@
+# This file is a part of the AnyBlok / Pyramid / REST api project
+#
+#    Copyright (C) 2017 Franck Bret <franckbret@gmail.com>
+#    Copyright (C) 2017 Jean-Sebastien SUZANNE <jssuzanne@anybox.fr>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file,You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+# flake8: noqa
 """ A set of methods for crud resource manipulation
 # TODO: Add a get_or_create_item method
 # TODO: Manage relationship
@@ -23,7 +32,6 @@ class CrudResource(object):
 
     """
     model = None
-    item_key = 'id'
 
     def __init__(self, request):
         self.request = request
@@ -159,12 +167,18 @@ class CrudResource(object):
 
         return item.to_dict()
 
+    def get_item(self):
+        model = self.get_model()
+        model_pks = model.get_primary_keys()
+        pks = {x: self.request.matchdict[x] for x in model_pks}
+        item = model.from_primary_key(**pks)
+        return item
+
     @cornice_view(validators=(base_validator,))
     def get(self):
         """
         """
-        model = self.get_model()
-        item = model.query().get(self.request.matchdict[self.item_key])
+        item = self.get_item()
         if item:
             return item.to_dict()
         else:
@@ -177,8 +191,7 @@ class CrudResource(object):
     def put(self):
         """
         """
-        model = self.get_model()
-        item = model.query().get(self.request.matchdict[self.item_key])
+        item = self.get_item()
         if item:
             item.update(**self.request.json_body)
             return item.to_dict()
@@ -192,8 +205,7 @@ class CrudResource(object):
     def delete(self):
         """
         """
-        model = self.get_model()
-        item = model.query().get(self.request.matchdict[self.item_key])
+        item = self.get_item()
         if item:
             item.delete()
             self.request.status = 204
