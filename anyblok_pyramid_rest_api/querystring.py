@@ -78,20 +78,26 @@ class QueryString:
                     'querystring', '400 Bad Request',
                     "ORDER_by operator '%s' does not exist." % op)
                 self.request.errors.status = 400
-                op = None
             # Column exists?
-            if key not in self.Model.fields_description().keys():
+            elif not key:
                 self.request.errors.add(
-                    'querystring', '400 Bad Request',
-                    "Key '%s' does not exist in model" % key)
+                    'querystring',
+                    '400 Bad Request',
+                    "No key ordered" % key)
                 self.request.errors.status = 400
-                key = None
-
-            if key and op:
-                if op == "asc":
-                    query = query.order_by(getattr(self.Model, key).asc())
-                if op == "desc":
-                    query = query.order_by(getattr(self.Model, key).desc())
+            else:
+                res = self.get_model_and_key_from_relationship(
+                    query, self.Model, key.split('.'))
+                if isinstance(res, tuple):
+                    _query, _model, _key = res
+                    query = _query.order_by(
+                        getattr(getattr(_model, _key), op)())
+                else:
+                    self.request.errors.add(
+                        'querystring',
+                        '400 Bad Request',
+                        "Order %r: %s" % (key, res))
+                    self.request.errors.status = 400
 
         return query
 
@@ -145,7 +151,7 @@ class QueryString:
         query = query.filter(Field.model.in_(models))
         query = query.filter(Field.name == fieldname)
         field = query.first()
-        if field.remote_model:
+        if field and field.remote_model:
             return registry.get(field.remote_model)
 
         return None
@@ -153,16 +159,16 @@ class QueryString:
     def get_model_and_key_from_relationship(self, query, model, keys):
         key = keys[0]
         if key not in model.fields_description():
-            return '%r not exist in model %s.' % (key, model)
+            return '%r does not exist in model %s.' % (key, model)
 
         if len(keys) == 1:
             return (query, model, keys[0])
         else:
-            field = getattr(model, keys[0])
-            query = query.join(field)
-            model = self.get_remote_model_for(model, keys[0])
-            if model is None:
+            field = getattr(model, key)
+            new_model = self.get_remote_model_for(model, key)
+            if new_model is None:
                 return '%r in model %s is not a relationship.' % (key, model)
 
+            query = query.join(field)
             return self.get_model_and_key_from_relationship(
-                query, model, keys[1:])
+                query, new_model, keys[1:])

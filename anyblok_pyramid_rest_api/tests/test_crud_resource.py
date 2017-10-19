@@ -236,18 +236,18 @@ class TestCrudServiceBase(PyramidDBTestCase):
         """Example POST schema validation fail on invalid column name /anothers/
         """
         fail = self.webserver.post_json(
-                '/anothers', {'badcolumn': 'plip'}, status=400)
+            '/anothers', {'badcolumn': 'plip'}, status=400)
         self.assertEqual(fail.status_code, 400)
         self.assertEqual(fail.json_body.get('status'), 'error')
         self.assertEqual(
-                fail.json_body.get('errors')[0].get('location'), 'body')
+            fail.json_body.get('errors')[0].get('location'), 'body')
 
     def test_example_service_post_schema_fail_bad_value_type(self):
         """Example POST schema validation fail on invalid value type /anothers/
         """
         fail = self.webserver.post_json(
-                '/anothers', {'name': 0}, status=400)
+            '/anothers', {'name': 0}, status=400)
         self.assertEqual(fail.status_code, 400)
         self.assertEqual(fail.json_body.get('status'), 'error')
         self.assertEqual(
-                fail.json_body.get('errors')[0].get('location'), 'body')
+            fail.json_body.get('errors')[0].get('location'), 'body')
