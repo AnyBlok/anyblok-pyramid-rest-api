@@ -321,9 +321,9 @@ class TestQueryString(DBTestCase):
         model.insert(test=t2)
         model.insert(test=t2)
         model.insert(test=t1)
-        self.assertEqual(
-            Q.all(),
-            query.order_by(registry.Test.name.asc()).all())
+        query = query.join(registry.Test2.test)
+        query = query.order_by(registry.Test.name.asc())
+        self.assertEqual(Q.all(), query.all())
 
     def test_querystring_from_order_by_ko_bad_op(self):
         registry = self.init_registry(None)

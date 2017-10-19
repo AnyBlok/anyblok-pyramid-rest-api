@@ -164,9 +164,7 @@ class QueryString:
         if len(keys) == 1:
             return (query, model, keys[0])
         else:
-            print('plop')
             field = getattr(model, key)
-            print(model, key, field)
             new_model = self.get_remote_model_for(model, key)
             if new_model is None:
                 return '%r in model %s is not a relationship.' % (key, model)
