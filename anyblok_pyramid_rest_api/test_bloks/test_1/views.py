@@ -12,7 +12,6 @@ from marshmallow import Schema, fields
 
 from anyblok_pyramid_rest_api.crud_resource import CrudResource
 from anyblok_pyramid_rest_api.validator import (
-    # base_validator,
     body_validator,
     full_validator
 )
@@ -61,15 +60,17 @@ def another_service_get(request):
 
 
 @another_service.put(
-    validators=(full_validator,),
-    schema=ExampleSchema())
+    validators=(body_validator,),
+    schema=ExampleSchema(partial=('id',)))
 def another_service_put(request):
-    """ full_validator + full schema
+    """ body_validator + schema
+    As it is a PUT, exclude 'id' from validation with the `partial` arg
+    on schema instantiation
     """
     registry = request.anyblok.registry
     model = registry.get('Model.Example')
-    item = model.query().get(request.validated['path']['id'])
-    item.update(**request.validated['body'])
+    item = model.query().get(request.matchdict['id'])
+    item.update(**request.validated)
     return item.to_dict()
 
 
@@ -77,7 +78,7 @@ def another_service_put(request):
     validators=(body_validator,),
     schema=ExampleSchema(partial=('id',)))
 def another_service_post(request):
-    """ body_validator + schema.
+    """ body_validator + schema
     As it is a POST, exclude 'id' from validation with the `partial` arg
     on schema instantiation
     """
