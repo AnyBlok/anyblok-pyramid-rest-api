@@ -50,7 +50,7 @@ class TestCrudResourceBase(PyramidDBTestCase):
         """Example PUT /examples/{id}"""
         ex = self.create_example()
         response = self.webserver.put_json(
-                '/examples/%s' % ex.id, {'name': 'plip'})
+            '/examples/%s' % ex.id, {'name': 'plip'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plip")
 
@@ -222,7 +222,7 @@ class TestCrudServiceBase(PyramidDBTestCase):
         """Example PUT /anothers/{id}"""
         ex = self.create_example()
         response = self.webserver.put_json(
-                '/anothers/%s' % ex.id, {'name': 'plip'})
+            '/anothers/%s' % ex.id, {'name': 'plip'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plip")
 

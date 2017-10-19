@@ -13,9 +13,8 @@
 """
 from cornice.resource import view as cornice_view
 from anyblok.registry import RegistryManagerException
-from .query import update_query_filter_by, update_query_order_by
-
-from .validator import deserialize_querystring, base_validator
+from .querystring import QueryString
+from .validator import base_validator
 
 
 class CrudResource(object):
@@ -29,6 +28,7 @@ class CrudResource(object):
 
     """
     model = None
+    QueryString = QueryString
 
     def __init__(self, request):
         self.request = request
@@ -65,39 +65,29 @@ class CrudResource(object):
         Offset will apply an offset on records
         """
         model = self.get_model()
-        Q = model.query()
+        query = model.query()
 
         headers = self.request.response.headers
-        headers['X-Total-Records'] = str(Q.count())
+        headers['X-Total-Records'] = str(query.count())
 
         if self.request.params:
             # TODO: Implement schema validation to use request.validated
-            parsed_params = deserialize_querystring(self.request.params)
-            Q = update_query_filter_by(
-                self.request, Q, model, parsed_params['filter_by'])
-            Q = update_query_order_by(
-                self.request, Q, model, parsed_params['order_by'])
-            # LIMIT
-            if parsed_params.get('limit', None):
-                Q = Q.limit(int(parsed_params['limit']))
-            # OFFSET
-            if parsed_params.get('offset', 0) > 0:
-                Q = Q.offset(int(parsed_params['offset']))
-
+            querystring = self.QueryString(self.request, model)
+            query = querystring.update_sqlalchemy_query(query)
             # TODO: Advanced pagination with Link Header
             # Link: '<https://api.github.com/user/repos?page=3&per_page=100>;
             # rel="next",
             # <https://api.github.com/user/repos?page=50&per_page=100>;
             # rel="last"'
-            headers['X-Count-Records'] = str(Q.count())
+            headers['X-Count-Records'] = str(query.count())
             # TODO: Etag / timestamp / 304 if no changes
             # TODO: Cache headers
-            return Q.all().to_dict() if Q.count() > 0 else dict()
+            return query.all().to_dict() if query.count() > 0 else dict()
         else:
             # no querystring, returns all records (maybe we will want to apply
             # some default filters values
-            headers['X-Count-Records'] = str(Q.count())
-            return Q.all().to_dict() if Q.count() > 0 else dict()
+            headers['X-Count-Records'] = str(query.count())
+            return query.all().to_dict() if query.count() > 0 else dict()
 
     @cornice_view(validators=(base_validator,))
     def collection_post(self):
