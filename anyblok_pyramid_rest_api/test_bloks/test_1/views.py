@@ -12,7 +12,10 @@ from marshmallow import Schema, fields
 
 from anyblok_pyramid_rest_api.crud_resource import CrudResource
 from anyblok_pyramid_rest_api.validator import (
-        base_validator, body_validator, full_validator)
+    # base_validator,
+    body_validator,
+    full_validator
+)
 
 
 class ExampleSchema(Schema):
@@ -43,8 +46,8 @@ another_service = Service(name='another_service', path='/anothers/{id}')
 
 # another collection endpoint through a service with the same model
 another_collection_service = Service(
-        name='another_collection_service',
-        path='/anothers')
+    name='another_collection_service',
+    path='/anothers')
 
 
 @another_service.get()
@@ -58,8 +61,8 @@ def another_service_get(request):
 
 
 @another_service.put(
-        validators=(full_validator,),
-        schema=ExampleSchema())
+    validators=(full_validator,),
+    schema=ExampleSchema())
 def another_service_put(request):
     """ full_validator + full schema
     """
@@ -71,8 +74,8 @@ def another_service_put(request):
 
 
 @another_collection_service.post(
-        validators=(body_validator,),
-        schema=ExampleSchema(partial=('id',)))
+    validators=(body_validator,),
+    schema=ExampleSchema(partial=('id',)))
 def another_service_post(request):
     """ body_validator + schema.
     As it is a POST, exclude 'id' from validation with the `partial` arg
