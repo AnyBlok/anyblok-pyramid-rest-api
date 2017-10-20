@@ -28,29 +28,53 @@ class ExempleSchema(ModelSchema):
 class TestMarshmallow(DBTestCase):
 
     def test_dump_simple_schema(self):
-        exemple_schema = ExempleSchema()
         registry = self.init_registry(add_model)
-        exemple_schema.generate_marsmallow_instance(registry)
+        exemple_schema = ExempleSchema(context={'registry': registry})
         exemple = registry.Exemple.insert(name="test")
         data, errors = exemple_schema.dump(exemple)
         self.assertFalse(errors)
         self.assertEqual(data, {'number': None, 'id': 1, 'name': 'test'})
 
     def test_load_simple_schema_1(self):
-        exemple_schema = ExempleSchema()
         registry = self.init_registry(add_model)
-        exemple_schema.generate_marsmallow_instance(registry)
+        exemple_schema = ExempleSchema(context={'registry': registry})
+        exemple = registry.Exemple.insert(name="test")
+        data, errors = exemple_schema.load(
+            {'id': exemple.id, 'name': exemple.name})
+        self.assertEqual(data, {'id': exemple.id, 'name': exemple.name})
+        self.assertFalse(errors)
+
+    def test_load_simple_schema_2(self):
+        registry = self.init_registry(add_model)
+        exemple_schema = ExempleSchema(context={'registry': registry})
         exemple = registry.Exemple.insert(name="test")
         data, errors = exemple_schema.load({'id': exemple.id})
         self.assertEqual(data, {'id': exemple.id})
         self.assertEqual(
             errors, {'name': ["Missing data for required field."]})
 
-    def test_load_simple_schema_2(self):
-        exemple_schema = ExempleSchema(partial=('name',))
+    def test_load_simple_schema_3(self):
         registry = self.init_registry(add_model)
-        exemple_schema.generate_marsmallow_instance(registry)
+        exemple_schema = ExempleSchema(
+            partial=('name',), context={'registry': registry})
         exemple = registry.Exemple.insert(name="test")
         data, errors = exemple_schema.load({'id': exemple.id})
         self.assertFalse(errors)
-        self.assertEqual(data, {'number': None, 'id': exemple.id, 'name': None})
+        self.assertEqual(data, {'id': exemple.id})
+
+    def test_load_simple_schema_4(self):
+        registry = self.init_registry(add_model)
+        exemple_schema = ExempleSchema(
+            partial=('name',), context={'registry': registry})
+        exemple = registry.Exemple.insert(name="test")
+        data, errors = exemple_schema.load({'id': exemple.id, 'name': None})
+        self.assertEqual(errors, {'name': ['Field may not be null.']})
+        self.assertEqual(data, {'id': exemple.id})
+
+    def test_validate_simple_schema(self):
+        registry = self.init_registry(add_model)
+        exemple_schema = ExempleSchema(context={'registry': registry})
+        exemple = registry.Exemple.insert(name="test")
+        errors = exemple_schema.validate(
+            {'id': exemple.id, 'name': exemple.name, 'number': 'test'})
+        self.assertEqual(errors, {'number': ['Not a valid integer.']})

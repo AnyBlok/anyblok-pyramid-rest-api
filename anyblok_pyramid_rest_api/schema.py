@@ -7,7 +7,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 """A set of reusable basic schemas"""
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, post_load
 from marshmallow_sqlalchemy.schema import ModelSchema as MS
 from marshmallow_sqlalchemy.convert import ModelConverter as MC
 from anyblok.common import anyblok_column_prefix
@@ -32,33 +32,51 @@ class ModelConverter(MC):
         return res
 
 
-class ModelSchema:
+class ModelSchema(Schema):
     model = None
 
     def __init__(self, *args, **kwargs):
+        super(ModelSchema, self).__init__(*args, **kwargs)
         self.args = args
         self.kwargs = kwargs
+        self._schema = None
 
-    def generate_marsmallow_instance(self, registry):
+    def generate_marsmallow_instance(self):
+        registry = self.context.get('registry')
 
-        class Schema(MS):
+        class Schema(self.__class__, MS):
+
+            load = MS.load
+            dump = MS.dump
+            validate = MS.validate
+
             class Meta:
                 model = registry.get(self.model)
                 sqla_session = registry.Session
                 model_converter = ModelConverter
 
-        self.schema = Schema(*self.args, **self.kwargs)
-        return self.schema
+            @post_load
+            def make_instance(self, data):
+                return data
+
+        self._schema = Schema(*self.args, **self.kwargs)
+        return self._schema
+
+    @property
+    def schema(self):
+        if not self._schema:
+            return self.generate_marsmallow_instance()
+
+        return self._schema
 
     def load(self, *args, **kwargs):
-        data, errors = self.schema.load(*args, **kwargs)
-        if not isinstance(data, dict):
-            data = self.dump(data, *args[1:], **kwargs).data
-
-        return data, errors
+        return self.schema.load(*args, **kwargs)
 
     def dump(self, *args, **kwargs):
         return self.schema.dump(*args, **kwargs)
+
+    def validate(self, *args, **kwargs):
+        return self.schema.validate(*args, **kwargs)
 
 
 class FullRequestSchema(Schema):

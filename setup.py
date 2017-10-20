@@ -43,7 +43,6 @@ anyblok_pyramid_includeme = [
 test_bloks = [
     'test_rest_api_1=anyblok_pyramid_rest_api.test_bloks.test_1:TestBlok1',
     'test_rest_api_2=anyblok_pyramid_rest_api.test_bloks.test_2:TestBlok2',
-    # 'test_rest_api_3=anyblok_pyramid_rest_api.test_bloks.test_3:TestBlok3',
 ]
 
 setup(
