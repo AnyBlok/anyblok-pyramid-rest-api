@@ -15,18 +15,27 @@ from anyblok_pyramid_rest_api.validator import (
     body_validator,
     full_validator
 )
+from anyblok_pyramid_rest_api.schema import FullRequestSchema
 
 
 class ExampleSchema(Schema):
     """A basic marshmallow schema example
+    This one represents the model fields
     """
     id = fields.Int(required=True)
     name = fields.Str(required=True)
 
 
+class AnotherSchema(FullRequestSchema):
+    """This one inherits FullRequestSchema and represents the request
+    """
+    body = fields.Nested(ExampleSchema(partial=('id',)))
+    path = fields.Nested(ExampleSchema(partial=('name',)))
+
+
 @resource(collection_path='/examples', path='/examples/{id}')
 class ExampleResource(CrudResource):
-    """ CrudResource basic example. No validator, no schema
+    """CrudResource basic example. No validator, no schema
     """
     model = 'Model.Example'
 
@@ -35,7 +44,7 @@ class ExampleResource(CrudResource):
           path='/basevalidator/examples/{id}',
           validators=(full_validator,))
 class ExampleResourceBaseValidator(CrudResource):
-    """ CrudResource basic example with base validator
+    """CrudResource basic example with base validator
     """
     model = 'Model.Example'
 
@@ -60,17 +69,15 @@ def another_service_get(request):
 
 
 @another_service.put(
-    validators=(body_validator,),
-    schema=ExampleSchema(partial=('id',)))
+    validators=(full_validator,),
+    schema=AnotherSchema())
 def another_service_put(request):
-    """ body_validator + schema
-    As it is a PUT, exclude 'id' from validation with the `partial` arg
-    on schema instantiation
+    """ full_validator + AnotherSchema
     """
     registry = request.anyblok.registry
     model = registry.get('Model.Example')
-    item = model.query().get(request.matchdict['id'])
-    item.update(**request.validated)
+    item = model.query().get(request.validated.get('path').get('id'))
+    item.update(**request.validated.get('body'))
     return item.to_dict()
 
 
