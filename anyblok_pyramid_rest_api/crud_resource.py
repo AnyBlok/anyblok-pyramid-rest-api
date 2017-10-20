@@ -30,7 +30,7 @@ class CrudResource(object):
     model = None
     QueryString = QueryString
 
-    def __init__(self, request):
+    def __init__(self, request, **kwargs):
         self.request = request
         self.registry = self.request.anyblok.registry
 
