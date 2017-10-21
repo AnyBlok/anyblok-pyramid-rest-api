@@ -49,20 +49,20 @@ def add_complexe_model():
 
 
 class ExempleSchema(ModelSchema):
-    model = 'Model.Exemple'
+    ANYBLOK_MODEL = 'Model.Exemple'
 
 
 class CitySchema(ModelSchema):
-    model = 'Model.City'
+    ANYBLOK_MODEL = 'Model.City'
 
 
 class AddressSchema(ModelSchema):
-    model = 'Model.Address'
+    ANYBLOK_MODEL = 'Model.Address'
     city = fields.Nested(CitySchema)
 
 
 class CustomerSchema(ModelSchema):
-    model = 'Model.Customer'
+    ANYBLOK_MODEL = 'Model.Customer'
     addresses = fields.Nested(AddressSchema, many=True, exclude=('customer', ))
 
 

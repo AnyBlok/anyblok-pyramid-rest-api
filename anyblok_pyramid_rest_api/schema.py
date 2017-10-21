@@ -33,7 +33,8 @@ class ModelConverter(MC):
 
 
 class ModelSchema(Schema):
-    model = None
+    """A marshmallow schema based on the AnyBlok Model"""
+    ANYBLOK_MODEL = None
 
     def __init__(self, *args, **kwargs):
         super(ModelSchema, self).__init__(*args, **kwargs)
@@ -51,7 +52,7 @@ class ModelSchema(Schema):
             validate = MS.validate
 
             class Meta:
-                model = registry.get(self.model)
+                model = registry.get(self.ANYBLOK_MODEL)
                 sqla_session = registry.Session
                 model_converter = ModelConverter
 
