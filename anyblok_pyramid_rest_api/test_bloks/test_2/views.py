@@ -16,7 +16,7 @@ from anyblok_pyramid_rest_api.crud_resource import CrudResource
     installed_blok=current_blok()
 )
 class CrudBlok(CrudResource):
-    model = 'Model.System.Blok'
+    ANYBLOK_MODEL = 'Model.System.Blok'
 
 
 @resource(
@@ -24,7 +24,7 @@ class CrudBlok(CrudResource):
     path='/blok2/{name}',
 )
 class CrudBlok2(CrudResource):
-    model = 'Model.System.Blok'
+    ANYBLOK_MODEL = 'Model.System.Blok'
 
 
 @resource(
@@ -33,7 +33,7 @@ class CrudBlok2(CrudResource):
     installed_blok=current_blok()
 )
 class CrudColumn(CrudResource):
-    model = 'Model.System.Column'
+    ANYBLOK_MODEL = 'Model.System.Column'
 
 
 @resource(
@@ -41,4 +41,4 @@ class CrudColumn(CrudResource):
     path='/bad/model/{id}',
 )
 class CrudBadModel(CrudResource):
-    model = 'Model.Bad.Model'
+    ANYBLOK_MODEL = 'Model.Bad.Model'
