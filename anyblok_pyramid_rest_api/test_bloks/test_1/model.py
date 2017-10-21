@@ -38,10 +38,10 @@ class Thing():
     create_date = DateTime(default=datetime.now, nullable=False)
     edit_date = DateTime(default=datetime.now, nullable=False)
     secret = Password(
-            crypt_context={'schemes': ['pbkdf2_sha512']}, nullable=False)
+        crypt_context={'schemes': ['pbkdf2_sha512']}, nullable=False)
     example = Many2One(
-            label="Example", model=Model.Example, one2many="things",
-            nullable=False)
+        label="Example", model=Model.Example, one2many="things",
+        nullable=False)
 
     def __str__(self):
         return ('{self.name}').format(self=self)

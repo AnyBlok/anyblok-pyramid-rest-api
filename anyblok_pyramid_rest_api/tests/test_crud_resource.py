@@ -364,9 +364,9 @@ class TestCrudServiceAdvanced(PyramidDBTestCase):
         """Example POST /things/"""
         ex = self.create_example()
         response = self.webserver.post_json(
-                    '/things',
-                    {'name': 'book', 'secret': 'xxx', 'example_id': ex.id}
-                )
+            '/things',
+            {'name': 'book', 'secret': 'xxx', 'example_id': ex.id}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "book")
 

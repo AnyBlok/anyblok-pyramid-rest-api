@@ -103,7 +103,7 @@ def thing_service_get(request):
     registry = request.anyblok.registry
     model = registry.get('Model.Thing')
     item = model.query().filter_by(
-            uuid=request.validated['path']['uuid']).first()
+        uuid=request.validated['path']['uuid']).first()
     # Use the model schema to serialize response
     schema = ThingSchema()
     return schema.dump(item.to_dict()).data
@@ -118,7 +118,7 @@ def thing_service_put(request):
     registry = request.anyblok.registry
     model = registry.get('Model.Thing')
     item = model.query().filter_by(
-            uuid=request.validated.get('path').get('uuid')).first()
+        uuid=request.validated.get('path').get('uuid')).first()
     item.update(**request.validated.get('body'))
     schema = ThingSchema()
     return schema.dump(item.to_dict()).data
