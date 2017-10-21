@@ -6,7 +6,12 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
+from pyramid.renderers import JSON
+from uuid import UUID
+from datetime import datetime
+
 from anyblok.blok import Blok
+from anyblok_pyramid.adapter import uuid_adapter, datetime_adapter
 
 
 class TestBlok1(Blok):
@@ -25,4 +30,8 @@ class TestBlok1(Blok):
 
     @classmethod
     def pyramid_load_config(cls, config):
+        json_renderer = JSON()
+        json_renderer.add_adapter(UUID, uuid_adapter)
+        json_renderer.add_adapter(datetime, datetime_adapter)
+        config.add_renderer('json', json_renderer)
         config.scan(cls.__module__ + '.views')
