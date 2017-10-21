@@ -7,7 +7,7 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 from anyblok_pyramid.tests.testcase import DBTestCase
 from anyblok.column import Integer, String
-from anyblok.relationship import Many2One
+from anyblok.relationship import Many2One, Many2Many
 from anyblok_pyramid_rest_api.schema import ModelSchema
 from marshmallow import fields
 
@@ -34,9 +34,15 @@ def add_complexe_model():
         zipcode = String(nullable=False)
 
     @Declarations.register(Declarations.Model)
+    class Tag:
+        id = Integer(primary_key=True)
+        name = String(nullable=False)
+
+    @Declarations.register(Declarations.Model)
     class Customer:
         id = Integer(primary_key=True)
         name = String(nullable=False)
+        tags = Many2Many(model=Declarations.Model.Tag)
 
     @Declarations.register(Declarations.Model)
     class Address:
@@ -56,6 +62,10 @@ class CitySchema(ModelSchema):
     ANYBLOK_MODEL = 'Model.City'
 
 
+class TagSchema(ModelSchema):
+    ANYBLOK_MODEL = 'Model.Tag'
+
+
 class AddressSchema(ModelSchema):
     ANYBLOK_MODEL = 'Model.Address'
     city = fields.Nested(CitySchema)
@@ -64,6 +74,7 @@ class AddressSchema(ModelSchema):
 class CustomerSchema(ModelSchema):
     ANYBLOK_MODEL = 'Model.Customer'
     addresses = fields.Nested(AddressSchema, many=True, exclude=('customer', ))
+    tags = fields.Nested(TagSchema, many=True)
 
 
 class TestMarshmallow(DBTestCase):
@@ -123,7 +134,9 @@ class TestMarshmallow(DBTestCase):
     def test_dump_complexe_schema(self):
         registry = self.init_registry(add_complexe_model)
         customer_schema = CustomerSchema(context={'registry': registry})
+        tag = registry.Tag.insert(name="tag 1")
         customer = registry.Customer.insert(name="C1")
+        customer.tags.append(tag)
         city = registry.City.insert(name="Rouen", zipcode="76000")
         address = registry.Address.insert(
             customer=customer, city=city, street="Somewhere")
@@ -143,6 +156,12 @@ class TestMarshmallow(DBTestCase):
                             'name': city.name,
                             'zipcode': city.zipcode,
                         },
+                    },
+                ],
+                'tags': [
+                    {
+                        'id': tag.id,
+                        'name': tag.name,
                     },
                 ],
             }
