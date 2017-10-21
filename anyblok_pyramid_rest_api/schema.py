@@ -85,6 +85,7 @@ class FullRequestSchema(Schema):
 
     :Example:
 
+    >>> from marshmallow import Schema, fields
     >>> from anyblok_pyramid_rest_api.schema import FullRequestSchema
     >>> class ModelSchema(Schema):
     >>>     id = fields.Int(required=True)
