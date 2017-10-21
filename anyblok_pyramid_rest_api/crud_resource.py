@@ -24,22 +24,22 @@ class CrudResource(object):
 
     >>> @resource(collection_path='/examples', path='/examples/{id}')
     >>> class ExampleResource(CrudResource):
-    >>>     model = 'Model.Example'
+    >>>     ANYBLOK_MODEL = 'Model.Example'
 
     """
-    model = None
+    ANYBLOK_MODEL = None
     QueryString = QueryString
 
-    def __init__(self, request):
+    def __init__(self, request, **kwargs):
         self.request = request
         self.registry = self.request.anyblok.registry
 
     def get_model(self):
-        if not self.model:
+        if not self.ANYBLOK_MODEL:
             raise ValueError(
                 "You must provide a 'model' to use CrudResource class")
         try:
-            model = self.registry.get(self.model)
+            model = self.registry.get(self.ANYBLOK_MODEL)
         except RegistryManagerException:
             raise RegistryManagerException(
                 "The model you set on CrudResource class does not exists")
