@@ -9,6 +9,7 @@ from cornice import Service
 from cornice.resource import resource
 
 from anyblok_pyramid_rest_api.crud_resource import CrudResource
+from anyblok_pyramid_rest_api.querystring import QueryString
 from anyblok_pyramid_rest_api.validator import (
     body_validator,
     full_validator
@@ -143,10 +144,20 @@ def thing_service_post(request):
     validators=(full_validator,),
     schema=ThingRequestSchema(only=('querystring')))
 def thing_service_get_collection(request):
-    """ body_validator + schema for collection
+    """ full_validator + schema for collection
     """
     registry = request.anyblok.registry
     model = registry.get('Model.Thing')
-    collection = model.query().all()
+    query = model.query()
+    headers = request.response.headers
+    headers['X-Total-Records'] = str(query.count())
+
+    if request.params:
+        querystring = QueryString(request, model)
+        query = querystring.update_sqlalchemy_query(query)
+
+    collection = query.all()
+    headers['X-Count-Records'] = str(len(collection))
+
     schema = ThingSchema(many=True)
     return schema.dump(collection.to_dict()).data
