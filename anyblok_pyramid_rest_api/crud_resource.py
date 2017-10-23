@@ -17,6 +17,59 @@ from .querystring import QueryString
 from .validator import base_validator
 
 
+def get_model(registry, modelname):
+    try:
+        model = registry.get(modelname)
+    except RegistryManagerException:
+        raise RegistryManagerException(
+            "The model %r does not exists" % modelname)
+
+    return model
+
+
+def collection_get(request, modelname):
+    """Parse request.params, deserialize it and then build an sqla query
+
+    Default behaviour is to search for equal matches where key is a column
+    name
+    Two special keys are available ('filter[*' and 'order_by[*')
+
+    Filter must be something like 'filter[key][operator]=value' where key
+    is mapped to an sql column and operator is one of (eq, ilike, like, lt,
+    lte, gt, gte, in, not)
+
+    Order_by must be something like 'order_by[operator]=value' where
+    'value' is mapped to an sql column and operator is one of (asc, desc)
+
+    Limit will limit the records quantity
+    Offset will apply an offset on records
+    """
+    model = get_model(request.anyblok.registry, modelname)
+    query = model.query()
+
+    headers = request.response.headers
+    headers['X-Total-Records'] = str(query.count())
+
+    if request.params:
+        # TODO: Implement schema validation to use request.validated
+        querystring = QueryString(request, model)
+        query = querystring.update_sqlalchemy_query(query)
+        # TODO: Advanced pagination with Link Header
+        # Link: '<https://api.github.com/user/repos?page=3&per_page=100>;
+        # rel="next",
+        # <https://api.github.com/user/repos?page=50&per_page=100>;
+        # rel="last"'
+        headers['X-Count-Records'] = str(query.count())
+        # TODO: Etag / timestamp / 304 if no changes
+        # TODO: Cache headers
+        return query.all().to_dict() if query.count() > 0 else dict()
+    else:
+        # no querystring, returns all records (maybe we will want to apply
+        # some default filters values
+        headers['X-Count-Records'] = str(query.count())
+        return query.all().to_dict() if query.count() > 0 else dict()
+
+
 class CrudResource(object):
     """ A class that add to cornice resource CRUD abilities on Anyblok models.
 
@@ -24,82 +77,35 @@ class CrudResource(object):
 
     >>> @resource(collection_path='/examples', path='/examples/{id}')
     >>> class ExampleResource(CrudResource):
-    >>>     ANYBLOK_MODEL = 'Model.Example'
+    >>>     model = 'Model.Example'
 
     """
-    ANYBLOK_MODEL = None
+    model = None
     QueryString = QueryString
 
     def __init__(self, request, **kwargs):
         self.request = request
         self.registry = self.request.anyblok.registry
 
-    def get_model(self):
-        if not self.ANYBLOK_MODEL:
+        if not self.model:
             raise ValueError(
                 "You must provide a 'model' to use CrudResource class")
-        try:
-            model = self.registry.get(self.ANYBLOK_MODEL)
-        except RegistryManagerException:
-            raise RegistryManagerException(
-                "The model you set on CrudResource class does not exists")
-
-        return model
 
     @cornice_view(validators=(base_validator,))
     def collection_get(self):
-        """Parse request.params, deserialize it and then build an sqla query
-
-        Default behaviour is to search for equal matches where key is a column
-        name
-        Two special keys are available ('filter[*' and 'order_by[*')
-
-        Filter must be something like 'filter[key][operator]=value' where key
-        is mapped to an sql column and operator is one of (eq, ilike, like, lt,
-        lte, gt, gte, in, not)
-
-        Order_by must be something like 'order_by[operator]=value' where
-        'value' is mapped to an sql column and operator is one of (asc, desc)
-
-        Limit will limit the records quantity
-        Offset will apply an offset on records
-        """
-        model = self.get_model()
-        query = model.query()
-
-        headers = self.request.response.headers
-        headers['X-Total-Records'] = str(query.count())
-
-        if self.request.params:
-            # TODO: Implement schema validation to use request.validated
-            querystring = self.QueryString(self.request, model)
-            query = querystring.update_sqlalchemy_query(query)
-            # TODO: Advanced pagination with Link Header
-            # Link: '<https://api.github.com/user/repos?page=3&per_page=100>;
-            # rel="next",
-            # <https://api.github.com/user/repos?page=50&per_page=100>;
-            # rel="last"'
-            headers['X-Count-Records'] = str(query.count())
-            # TODO: Etag / timestamp / 304 if no changes
-            # TODO: Cache headers
-            return query.all().to_dict() if query.count() > 0 else dict()
-        else:
-            # no querystring, returns all records (maybe we will want to apply
-            # some default filters values
-            headers['X-Count-Records'] = str(query.count())
-            return query.all().to_dict() if query.count() > 0 else dict()
+        return collection_get(self.request, self.model)
 
     @cornice_view(validators=(base_validator,))
     def collection_post(self):
         """
         """
-        model = self.get_model()
+        model = get_model(self.registry, self.model)
         item = model.insert(**self.request.validated['body'])
 
         return item.to_dict()
 
     def get_item(self):
-        model = self.get_model()
+        model = get_model(self.registry, self.model)
         model_pks = model.get_primary_keys()
         pks = {x: self.request.validated.get('path', {})[x] for x in model_pks}
         item = model.from_primary_keys(**pks)
@@ -116,10 +122,9 @@ class CrudResource(object):
             path = ', '.join(
                 ['%s=%s' % (x, y)
                  for x, y in self.request.validated.get('path', {}).items()])
-            model = self.get_model()
             self.request.errors.add(
                 'path', '404 not found',
-                'Resource %s with %s does not exist.' % (model, path))
+                'Resource %s with %s does not exist.' % (self.model, path))
             self.request.errors.status = 404
 
     @cornice_view(validators=(base_validator,))
@@ -134,10 +139,9 @@ class CrudResource(object):
             path = ', '.join(
                 ['%s=%s' % (x, y)
                  for x, y in self.request.validated.get('path', {}).items()])
-            model = self.get_model()
             self.request.errors.add(
                 'path', '404 not found',
-                'Resource %s with %s does not exist.' % (model, path))
+                'Resource %s with %s does not exist.' % (self.model, path))
             self.request.errors.status = 404
 
     @cornice_view(validators=(base_validator,))
@@ -153,8 +157,7 @@ class CrudResource(object):
             path = ', '.join(
                 ['%s=%s' % (x, y)
                  for x, y in self.request.validated.get('path', {}).items()])
-            model = self.get_model()
             self.request.errors.add(
                 'path', '404 not found',
-                'Resource %s with %s does not exist.' % (model, path))
+                'Resource %s with %s does not exist.' % (self.model, path))
             self.request.errors.status = 404

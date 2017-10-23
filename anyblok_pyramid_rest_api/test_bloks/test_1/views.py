@@ -27,7 +27,7 @@ from .schema import (
 class ExampleResource(CrudResource):
     """CrudResource basic example. No validator, no schema
     """
-    ANYBLOK_MODEL = 'Model.Example'
+    model = 'Model.Example'
 
 
 @resource(collection_path='/basevalidator/examples',
@@ -36,7 +36,7 @@ class ExampleResource(CrudResource):
 class ExampleResourceBaseValidator(CrudResource):
     """CrudResource basic example with base validator
     """
-    ANYBLOK_MODEL = 'Model.Example'
+    model = 'Model.Example'
 
 
 # another endpoint through a service with the same model
