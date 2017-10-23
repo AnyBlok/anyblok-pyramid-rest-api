@@ -11,12 +11,15 @@ from cornice.resource import resource
 from anyblok_pyramid_rest_api.crud_resource import (
     CrudResource,
     collection_get,
+    collection_post,
+    get,
+    put,
+    delete
 )
 from anyblok_pyramid_rest_api.validator import (
     body_validator,
     full_validator
 )
-
 from .schema import (
     ExampleSchema,
     AnotherSchema,
@@ -43,6 +46,7 @@ class ExampleResourceBaseValidator(CrudResource):
 
 # another endpoint through a service with the same model
 another_service = Service(name='another_service', path='/anothers/{id}')
+
 
 # another collection endpoint through a service with the same model
 another_collection_service = Service(
@@ -103,28 +107,30 @@ def thing_service_get(request):
     """ Use Full validator with a request schema but Validate
     only the path
     """
-    registry = request.anyblok.registry
-    model = registry.get('Model.Thing')
-    item = model.query().filter_by(
-        uuid=request.validated['path']['uuid']).first()
-    # Use the model schema to serialize response
     schema = ThingSchema()
-    return schema.dump(item.to_dict()).data
+    item = get(request, 'Model.Thing')
+    return schema.dump(item).data
 
 
 @thing_service.put(
     validators=(full_validator,),
-    schema=ThingRequestSchema())
+    schema=ThingRequestSchema(only=('path', 'body')))
 def thing_service_put(request):
     """ full_validator + AnotherSchema
     """
-    registry = request.anyblok.registry
-    model = registry.get('Model.Thing')
-    item = model.query().filter_by(
-        uuid=request.validated.get('path').get('uuid')).first()
-    item.update(**request.validated.get('body'))
     schema = ThingSchema()
-    return schema.dump(item.to_dict()).data
+    item = put(request, 'Model.Thing')
+    return schema.dump(item).data
+
+
+@thing_service.delete(
+    validators=(full_validator,),
+    schema=ThingRequestSchema(only=('path',)))
+def thing_service_delete(request):
+    """ full_validator + AnotherSchema
+    """
+    item = delete(request, 'Model.Thing')
+    return item
 
 
 @thing_collection_service.post(
@@ -135,11 +141,9 @@ def thing_service_post(request):
     As it is a POST, exclude 'id' from validation with the `partial` arg
     on schema instantiation
     """
-    registry = request.anyblok.registry
-    model = registry.get('Model.Thing')
-    item = model.insert(**request.validated)
     schema = ThingSchema()
-    return schema.dump(item.to_dict()).data
+    item = collection_post(request, 'Model.Thing')
+    return schema.dump(item).data
 
 
 @thing_collection_service.get(
