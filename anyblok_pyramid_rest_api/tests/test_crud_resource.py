@@ -398,7 +398,7 @@ class TestCrudServiceAdvanced(PyramidDBTestCase):
         self.assertEqual(len(response.json_body), 3)
         self.assertEqual(response.json_body[0].get('name'), "car")
 
-    def test_thing_collection_get_querystring(self):
+    def test_thing_collection_get_with_querystring(self):
         """Thing collection GET /things?querystring"""
         self.create_things()
         response = self.webserver.get('/things?filter[name][like]=car')
@@ -407,3 +407,12 @@ class TestCrudServiceAdvanced(PyramidDBTestCase):
         self.assertEqual(int(response.headers.get('X-Count-Records')), 1)
         self.assertEqual(len(response.json_body), 1)
         self.assertEqual(response.json_body[0].get('name'), "car")
+
+    def test_thing_collection_get_with_bad_querystring(self):
+        """Thing collection GET fail on bad /things?badquerystring"""
+        self.create_things()
+        fail = self.webserver.get('/things?filter[name][oops]=car', status=400)
+        self.assertEqual(fail.status_code, 400)
+        self.assertEqual(fail.json_body.get('status'), 'error')
+        self.assertEqual(
+            fail.json_body.get('errors')[0].get('location'), 'querystring')
