@@ -27,6 +27,14 @@ def get_model(registry, modelname):
     return model
 
 
+def get_item(registry, modelname, path={}):
+    model = get_model(registry, modelname)
+    model_pks = model.get_primary_keys()
+    pks = {x: path[x] for x in model_pks}
+    item = model.from_primary_keys(**pks)
+    return item
+
+
 def collection_get(request, modelname):
     """Parse request.params, deserialize it and then build an sqla query
 
@@ -70,6 +78,80 @@ def collection_get(request, modelname):
         return query.all().to_dict() if query.count() > 0 else dict()
 
 
+def collection_post(request, modelname):
+    """
+    """
+    model = get_model(request.anyblok.registry, modelname)
+    if 'body' in request.validated.keys():
+        item = model.insert(**request.validated['body'])
+    else:
+        item = model.insert(**request.validated)
+    return item.to_dict()
+
+
+def get(request, modelname):
+    """
+    """
+    item = get_item(
+        request.anyblok.registry,
+        modelname,
+        request.validated.get('path', {})
+    )
+    if item:
+        return item.to_dict()
+    else:
+        path = ', '.join(
+            ['%s=%s' % (x, y)
+             for x, y in request.validated.get('path', {}).items()])
+        request.errors.add(
+            'path', '404 not found',
+            'Resource %s with %s does not exist.' % (modelname, path))
+        request.errors.status = 404
+
+
+def put(request, modelname):
+    """
+    """
+    item = get_item(
+        request.anyblok.registry,
+        modelname,
+        request.validated.get('path', {})
+    )
+    if item:
+        item.update(**request.validated['body'])
+        return item.to_dict()
+    else:
+        path = ', '.join(
+            ['%s=%s' % (x, y)
+             for x, y in request.validated.get('path', {}).items()])
+        request.errors.add(
+            'path', '404 not found',
+            'Resource %s with %s does not exist.' % (modelname, path))
+        request.errors.status = 404
+
+
+def delete(request, modelname):
+    """
+    """
+    item = get_item(
+        request.anyblok.registry,
+        modelname,
+        request.validated.get('path', {})
+    )
+    if item:
+        item.delete()
+        request.status = 204
+        return {}
+    else:
+        path = ', '.join(
+            ['%s=%s' % (x, y)
+             for x, y in request.validated.get('path', {}).items()])
+        request.errors.add(
+            'path', '404 not found',
+            'Resource %s with %s does not exist.' % (modelname, path))
+        request.errors.status = 404
+
+
 class CrudResource(object):
     """ A class that add to cornice resource CRUD abilities on Anyblok models.
 
@@ -97,67 +179,22 @@ class CrudResource(object):
 
     @cornice_view(validators=(base_validator,))
     def collection_post(self):
-        """
-        """
-        model = get_model(self.registry, self.model)
-        item = model.insert(**self.request.validated['body'])
-
-        return item.to_dict()
-
-    def get_item(self):
-        model = get_model(self.registry, self.model)
-        model_pks = model.get_primary_keys()
-        pks = {x: self.request.validated.get('path', {})[x] for x in model_pks}
-        item = model.from_primary_keys(**pks)
-        return item
+        return collection_post(self.request, self.model)
 
     @cornice_view(validators=(base_validator,))
     def get(self):
         """
         """
-        item = self.get_item()
-        if item:
-            return item.to_dict()
-        else:
-            path = ', '.join(
-                ['%s=%s' % (x, y)
-                 for x, y in self.request.validated.get('path', {}).items()])
-            self.request.errors.add(
-                'path', '404 not found',
-                'Resource %s with %s does not exist.' % (self.model, path))
-            self.request.errors.status = 404
+        return get(self.request, self.model)
 
     @cornice_view(validators=(base_validator,))
     def put(self):
         """
         """
-        item = self.get_item()
-        if item:
-            item.update(**self.request.validated['body'])
-            return item.to_dict()
-        else:
-            path = ', '.join(
-                ['%s=%s' % (x, y)
-                 for x, y in self.request.validated.get('path', {}).items()])
-            self.request.errors.add(
-                'path', '404 not found',
-                'Resource %s with %s does not exist.' % (self.model, path))
-            self.request.errors.status = 404
+        return put(self.request, self.model)
 
     @cornice_view(validators=(base_validator,))
     def delete(self):
         """
         """
-        item = self.get_item()
-        if item:
-            item.delete()
-            self.request.status = 204
-            return {}
-        else:
-            path = ', '.join(
-                ['%s=%s' % (x, y)
-                 for x, y in self.request.validated.get('path', {}).items()])
-            self.request.errors.add(
-                'path', '404 not found',
-                'Resource %s with %s does not exist.' % (self.model, path))
-            self.request.errors.status = 404
+        return delete(self.request, self.model)
