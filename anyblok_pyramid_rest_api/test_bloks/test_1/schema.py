@@ -7,19 +7,21 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 from marshmallow import Schema, fields
 
-from anyblok_pyramid_rest_api.schema import FullRequestSchema
+from anyblok_pyramid_rest_api.schema import (
+    FullRequestSchema,
+)
 
 
 class ExampleSchema(Schema):
     """A basic marshmallow schema example
-    This one represents the model fields
+    This one represents the model.Example fields
     """
     id = fields.Int(required=True)
     name = fields.Str(required=True)
 
 
 class AnotherSchema(FullRequestSchema):
-    """This one inherits FullRequestSchema and represents the request
+    """This one inherits FullRequestSchema and represents the request model.Example
     """
     body = fields.Nested(ExampleSchema(partial=('id',)))
     path = fields.Nested(ExampleSchema(only=('id',)))
