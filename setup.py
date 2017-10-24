@@ -29,8 +29,7 @@ requirements = [
     'anyblok',
     'anyblok_pyramid',
     'cornice',
-    'marshmallow',
-    'marshmallow-sqlalchemy',
+    'anyblok-marshmallow',
 ]
 
 test_requirements = [
