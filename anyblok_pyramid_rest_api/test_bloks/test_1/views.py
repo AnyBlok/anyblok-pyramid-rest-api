@@ -107,7 +107,7 @@ def thing_service_get(request):
     """ Use Full validator with a request schema but Validate
     only the path
     """
-    schema = ThingSchema()
+    schema = ThingSchema(registry=request.anyblok.registry)
     item = get(request, 'Model.Thing')
     return schema.dump(item).data
 
@@ -118,7 +118,7 @@ def thing_service_get(request):
 def thing_service_put(request):
     """ full_validator + AnotherSchema
     """
-    schema = ThingSchema()
+    schema = ThingSchema(registry=request.anyblok.registry)
     item = put(request, 'Model.Thing')
     return schema.dump(item).data
 
@@ -141,7 +141,7 @@ def thing_service_post(request):
     As it is a POST, exclude 'id' from validation with the `partial` arg
     on schema instantiation
     """
-    schema = ThingSchema()
+    schema = ThingSchema(registry=request.anyblok.registry)
     item = collection_post(request, 'Model.Thing')
     return schema.dump(item).data
 
@@ -153,6 +153,6 @@ def thing_service_get_collection(request):
     """ full_validator + querystring schema validation + schema validation
     for response data
     """
-    schema = ThingSchema(many=True)
+    schema = ThingSchema(many=True, registry=request.anyblok.registry)
     collection = collection_get(request, 'Model.Thing')
     return schema.dump(collection).data
