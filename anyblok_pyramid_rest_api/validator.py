@@ -79,7 +79,7 @@ def base_validator(request, schema=None, deserializer=None, **kwargs):
     if schema is None:
         request.validated.update(base)
     else:
-        result, errors = schema.load(base)
+        result, errors = schema.load(base, registry=request.anyblok.registry)
         if errors:
             for k, v in errors.items():
                 request.errors.add(
@@ -102,7 +102,7 @@ def body_validator(request, schema=None, deserializer=None, **kwargs):
         return
 
     body = deserializer(request).get('body', {})
-    result, errors = schema.load(body)
+    result, errors = schema.load(body, registry=request.anyblok.registry)
     if errors:
         for k, v in errors.items():
             request.errors.add(
@@ -123,9 +123,9 @@ def full_validator(request, schema=None, deserializer=None, **kwargs):
 
     if schema is None:
         return
-
+    
     full = deserializer(request)
-    result, errors = schema.load(full)
+    result, errors = schema.load(full, registry=request.anyblok.registry)
     if errors:
         for k, v in errors.items():
             request.errors.add(

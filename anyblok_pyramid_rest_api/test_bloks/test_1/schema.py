@@ -7,9 +7,11 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 from marshmallow import Schema, fields
 
+from anyblok_marshmallow.schema import ModelSchema
 from anyblok_pyramid_rest_api.schema import (
     FullRequestSchema,
 )
+
 
 
 class ExampleSchema(Schema):
@@ -27,16 +29,20 @@ class AnotherSchema(FullRequestSchema):
     path = fields.Nested(ExampleSchema(only=('id',)))
 
 
-class ThingSchema(Schema):
+#class ThingSchema(Schema):
+class ThingSchema(ModelSchema):
     """Schema for the Thing model
     """
-    uuid = fields.UUID(required=True)
-    name = fields.Str(required=True)
-    secret = fields.Str(required=True, load_only=True)
-    example_id = fields.Int(required=True)
-    example = fields.Nested(ExampleSchema())
-    create_date = fields.DateTime(dump_only=True)
-    update_date = fields.DateTime(dump_only=True)
+
+    #uuid = fields.UUID(required=True)
+    #name = fields.Str(required=True)
+    #secret = fields.Str(required=True, load_only=True)
+    #example_id = fields.Int(required=True)
+    #example = fields.Nested(ExampleSchema())
+    #create_date = fields.DateTime(dump_only=True)
+    #update_date = fields.DateTime(dump_only=True)
+    class Meta:
+        model = 'Model.Thing'
 
 
 class ThingRequestSchema(FullRequestSchema):
