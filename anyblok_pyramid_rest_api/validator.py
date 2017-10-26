@@ -102,6 +102,9 @@ def body_validator(request, schema=None, deserializer=None, **kwargs):
         return
 
     body = deserializer(request).get('body', {})
+    if request.anyblok:
+        schema.context['registry'] = request.anyblok.registry
+
     result, errors = schema.load(body)
     if errors:
         for k, v in errors.items():
@@ -125,6 +128,9 @@ def full_validator(request, schema=None, deserializer=None, **kwargs):
         return
 
     full = deserializer(request)
+    if request.anyblok:
+        schema.context['registry'] = request.anyblok.registry
+
     result, errors = schema.load(full)
     if errors:
         for k, v in errors.items():

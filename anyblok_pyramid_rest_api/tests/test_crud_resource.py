@@ -192,3 +192,41 @@ class TestCrudResourceBaseValidator(PyramidDBTestCase):
         self.create_example()
         fail = self.webserver.get('/basevalidator/examples/0', status=404)
         self.assertEqual(fail.status_code, 404)
+
+
+class TestCrudResourceModelSchema(PyramidDBTestCase):
+    """Test Customers and Addresses from
+    test_bloks/test_3/views.py
+    """
+
+    blok_entry_points = ('bloks', 'test_bloks',)
+
+    def setUp(self):
+        super(TestCrudResourceModelSchema, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_3',))
+
+    def create_customer(self, name="bob"):
+        """Create a dummy customer record"""
+        tag = self.registry.Tag.insert(name="green")
+        customer = self.registry.Customer.insert(name=name)
+        customer.tags.append(tag)
+        city = self.registry.City.insert(name="nowhere", zipcode="000")
+        self.registry.Address.insert(
+            customer=customer, city=city, street="Dead end street")
+        return customer
+
+    def test_customer_get(self):
+        """Customer GET /customers/{id}"""
+        cu = self.create_customer()
+        response = self.webserver.get('/customers/%s' % cu.id)
+        print(response.json_body)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body.get('name'), "bob")
+
+    def test_customer_get_bad_value_in_path(self):
+        """Customer FAILED GET /customers/{id}"""
+        self.create_customer()
+        fail = self.webserver.get('/customers/0', status=404)
+        self.assertEqual(fail.status_code, 404)

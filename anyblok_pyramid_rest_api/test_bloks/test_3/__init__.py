@@ -15,7 +15,7 @@ from anyblok.blok import Blok
 from anyblok_pyramid.adapter import uuid_adapter, datetime_adapter
 
 
-class TestBlok1(Blok):
+class TestBlok3(Blok):
 
     version = '0.1.0'
     required = ['anyblok-core']

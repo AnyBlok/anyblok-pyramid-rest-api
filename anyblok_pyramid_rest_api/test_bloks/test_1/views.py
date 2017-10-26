@@ -116,10 +116,10 @@ def thing_service_get(request):
     validators=(full_validator,),
     schema=ThingRequestSchema(only=('path', 'body')))
 def thing_service_put(request):
-    """ full_validator + AnotherSchema
+    """ full_validator + RequestSchema
     """
-    schema = ThingSchema()
     item = put(request, 'Model.Thing')
+    schema = ThingSchema()
     return schema.dump(item).data
 
 
@@ -141,8 +141,8 @@ def thing_service_post(request):
     As it is a POST, exclude 'id' from validation with the `partial` arg
     on schema instantiation
     """
-    schema = ThingSchema()
     item = collection_post(request, 'Model.Thing')
+    schema = ThingSchema()
     return schema.dump(item).data
 
 
