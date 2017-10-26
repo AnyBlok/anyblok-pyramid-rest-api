@@ -79,7 +79,7 @@ def base_validator(request, schema=None, deserializer=None, **kwargs):
     if schema is None:
         request.validated.update(base)
     else:
-        result, errors = schema.load(base, registry=request.anyblok.registry)
+        result, errors = schema.load(base)
         if errors:
             for k, v in errors.items():
                 request.errors.add(
