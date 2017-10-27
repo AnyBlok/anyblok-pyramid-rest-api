@@ -220,10 +220,12 @@ class TestCrudResourceModelSchema(PyramidDBTestCase):
         """Customer GET /customers/{id}"""
         cu = self.create_customer()
         response = self.webserver.get('/customers/%s' % cu.id)
-        print(response.json_body)
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "bob")
+        self.assertEqual(len(response.json_body.get('addresses')), 1)
+        self.assertEqual(
+            response.json_body.get('addresses')[0].get('city').get('zipcode'),
+            "000")
 
     def test_customer_get_bad_value_in_path(self):
         """Customer FAILED GET /customers/{id}"""

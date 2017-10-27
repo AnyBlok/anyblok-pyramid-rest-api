@@ -91,6 +91,7 @@ def collection_post(request, modelname):
 
 def get(request, modelname):
     """
+    return a model instance based on path
     """
     item = get_item(
         request.anyblok.registry,
@@ -98,7 +99,7 @@ def get(request, modelname):
         request.validated.get('path', {})
     )
     if item:
-        return item.to_dict()
+        return item
     else:
         path = ', '.join(
             ['%s=%s' % (x, y)
@@ -164,6 +165,7 @@ class CrudResource(object):
     """
     model = None
     QueryString = QueryString
+    dschema_get = None
 
     def __init__(self, request, **kwargs):
         self.request = request
@@ -172,6 +174,19 @@ class CrudResource(object):
         if not self.model:
             raise ValueError(
                 "You must provide a 'model' to use CrudResource class")
+
+    def guess_dschema(self):
+        """Guess a deserialization schema instance
+        """
+        if 'schema' in self.request.current_service.arguments.keys():
+            base = self.request.current_service.schema
+            if 'body' in base.fields.keys() and base.fields.get('body').nested:
+                dschema = base.fields.get('body').nested
+                return dschema
+            else:
+                return base
+        else:
+            return None
 
     @cornice_view(validators=(base_validator,))
     def collection_get(self):
@@ -185,7 +200,17 @@ class CrudResource(object):
     def get(self):
         """
         """
-        return get(self.request, self.model)
+        item = get(self.request, self.model)
+        if not item:
+            return
+        if self.dschema_get:
+            dschema = self.dschema_get
+        else:
+            dschema = self.guess_dschema()
+        if dschema:
+            return dschema.dump(item).data
+        else:
+            return item.to_dict()
 
     @cornice_view(validators=(base_validator,))
     def put(self):
