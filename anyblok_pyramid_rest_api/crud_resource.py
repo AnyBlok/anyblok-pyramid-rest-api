@@ -83,15 +83,22 @@ def collection_post(request, modelname):
     """
     model = get_model(request.anyblok.registry, modelname)
     if 'body' in request.validated.keys():
-        item = model.insert(**request.validated['body'])
+        if request.validated.get('body').keys():
+            item = model.insert(**request.validated['body'])
+        else:
+            request.errors.add(
+                'body', '400 bad request',
+                'You can not post an empty body')
+            request.errors.status = 400
+            item = None
     else:
-        item = model.insert(**request.validated)
-    return item.to_dict()
+        if request.validated:
+            item = model.insert(**request.validated)
+    return item
 
 
 def get(request, modelname):
-    """
-    return a model instance based on path
+    """return a model instance based on path
     """
     item = get_item(
         request.anyblok.registry,
@@ -166,6 +173,7 @@ class CrudResource(object):
     model = None
     QueryString = QueryString
     dschema_get = None
+    dschema_collection_post = None
 
     def __init__(self, request, **kwargs):
         self.request = request
@@ -194,7 +202,19 @@ class CrudResource(object):
 
     @cornice_view(validators=(base_validator,))
     def collection_post(self):
-        return collection_post(self.request, self.model)
+        """
+        """
+        collection = collection_post(self.request, self.model)
+        if not collection:
+            return
+        if self.dschema_collection_post:
+            dschema = self.dschema_collection_post
+        else:
+            dschema = self.guess_dschema()
+        if dschema:
+            return dschema.dump(collection).data
+        else:
+            return collection.to_dict()
 
     @cornice_view(validators=(base_validator,))
     def get(self):

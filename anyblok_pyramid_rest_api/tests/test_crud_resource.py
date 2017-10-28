@@ -232,3 +232,35 @@ class TestCrudResourceModelSchema(PyramidDBTestCase):
         self.create_customer()
         fail = self.webserver.get('/customers/0', status=404)
         self.assertEqual(fail.status_code, 404)
+
+    def test_customer_collection_post_partial(self):
+        """Customer POST /customers"""
+        response = self.webserver.post_json('/customers', {'name': 'plip'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body.get('name'), "plip")
+
+    def test_customer_collection_post_empty_body(self):
+        """Customer POST /customers"""
+        fail = self.webserver.post_json(
+            '/customers', {}, status=400)
+        self.assertEqual(fail.status_code, 400)
+        self.assertEqual(fail.json_body.get('status'), 'error')
+        self.assertEqual(
+            fail.json_body.get('errors')[0].get('location'), 'body')
+        self.assertEqual(
+            fail.json_body.get('errors')[0].get('description'),
+            'You can not post an empty body')
+
+    def test_customer_collection_post_bad_key_in_body(self):
+        """Customer POST /customers"""
+        fail = self.webserver.post_json(
+            '/customers', {'unexistingkey': 'plip'}, status=400)
+        self.assertEqual(fail.status_code, 400)
+        self.assertEqual(fail.json_body.get('status'), 'error')
+        self.assertEqual(
+            fail.json_body.get('errors')[0].get('location'), 'body')
+        self.assertEqual(
+            fail.json_body.get('errors')[0].get('description'),
+            'You can not post an empty body')
+        # TODO: this actually fail like an empty body where it should fail on
+        # schema input validation. We probably need a new validator
