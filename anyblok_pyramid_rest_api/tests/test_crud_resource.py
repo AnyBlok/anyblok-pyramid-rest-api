@@ -229,7 +229,6 @@ class TestCrudResourceModelSchema(PyramidDBTestCase):
 
     def test_customer_get_bad_value_in_path(self):
         """Customer FAILED GET /customers/{id}"""
-        self.create_customer()
         fail = self.webserver.get('/customers/0', status=404)
         self.assertEqual(fail.status_code, 404)
 
@@ -264,3 +263,17 @@ class TestCrudResourceModelSchema(PyramidDBTestCase):
             'You can not post an empty body')
         # TODO: this actually fail like an empty body where it should fail on
         # schema input validation. We probably need a new validator
+
+    def test_customer_delete(self):
+        """Customer DELETE /customers/{id}"""
+        ex = self.create_customer()
+        response = self.webserver.delete('/customers/%s' % ex.id)
+        self.assertEqual(response.status_code, 200)
+        response = self.webserver.get('/customers')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 0)
+
+    def test_customer_delete_bad_value_in_path(self):
+        """Customer FAILED DELETE /customers/{id}"""
+        fail = self.webserver.get('/customers/0', status=404)
+        self.assertEqual(fail.status_code, 404)

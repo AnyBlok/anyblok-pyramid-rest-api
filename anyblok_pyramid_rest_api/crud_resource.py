@@ -28,11 +28,23 @@ def get_model(registry, modelname):
 
 
 def get_item(registry, modelname, path={}):
+    """Given a a modelname and a path returns a single record.
+    Path must match a primary key column.
+    """
     model = get_model(registry, modelname)
     model_pks = model.get_primary_keys()
     pks = {x: path[x] for x in model_pks}
     item = model.from_primary_keys(**pks)
     return item
+
+
+def get_path(request):
+    """Ensure we get a valid path
+    """
+    if 'path' in request.validated.keys():
+        return request.validated.get('path')
+    else:
+        return request.path
 
 
 def collection_get(request, modelname):
@@ -83,7 +95,7 @@ def collection_post(request, modelname):
     """
     model = get_model(request.anyblok.registry, modelname)
     if 'body' in request.validated.keys():
-        if request.validated.get('body').keys():
+        if request.validated.get('body'):
             item = model.insert(**request.validated['body'])
         else:
             request.errors.add(
@@ -103,7 +115,7 @@ def get(request, modelname):
     item = get_item(
         request.anyblok.registry,
         modelname,
-        request.validated.get('path', {})
+        get_path(request)
     )
     if item:
         return item
@@ -123,8 +135,9 @@ def put(request, modelname):
     item = get_item(
         request.anyblok.registry,
         modelname,
-        request.validated.get('path', {})
+        get_path(request)
     )
+
     if item:
         item.update(**request.validated['body'])
         return item.to_dict()
@@ -144,7 +157,7 @@ def delete(request, modelname):
     item = get_item(
         request.anyblok.registry,
         modelname,
-        request.validated.get('path', {})
+        get_path(request)
     )
     if item:
         item.delete()

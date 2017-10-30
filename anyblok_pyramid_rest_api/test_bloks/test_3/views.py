@@ -12,7 +12,8 @@ from anyblok_pyramid_rest_api.crud_resource import (
 )
 
 from anyblok_pyramid_rest_api.validator import (
-    full_validator
+    full_validator,
+    model_schema_validator
 )
 
 from .schema import (
@@ -24,7 +25,7 @@ from .schema import (
 @resource(collection_path='/customers',
           path='/customers/{id}',
           schema=CustomerRequestSchema(),
-          validators=(full_validator,))
+          validators=(model_schema_validator,))
 class CustomerResource(CrudResource):
     model = 'Model.Customer'
 

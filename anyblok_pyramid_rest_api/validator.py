@@ -139,3 +139,26 @@ def full_validator(request, schema=None, deserializer=None, **kwargs):
                 ''.join(map('{}.\n'.format, v)))
     else:
         request.validated.update(result)
+
+
+def model_schema_validator(request, schema=None, deserializer=None, **kwargs):
+    """
+    """
+    if schema is None:
+        # raise error we must have a schema
+        raise TypeError(
+            "You must provide a schema to your view when using "
+            "`model_schema_validator`")
+
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    if request.current_service.name.startswith("collection"):
+        action = "collection_%s" % request.method.lower()
+    else:
+        action = request.method.lower()
+
+    if action in schema.fields.keys() and schema.fields.get(action).nested:
+        schema = schema.fields.get(action).nested
+
+    return full_validator(request, schema=schema, deserializer=None, **kwargs)

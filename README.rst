@@ -28,10 +28,12 @@
 Anyblok Pyramid Rest Api
 ========================
 
-[for now it's a POC, no usable release yet]
+The main idea is to provide facilities for building restful api that interacts with `AnyBlok` models
+through a CRUD like pattern.
 
-A blok to build json rest api's.
-This blok use 'cornice', but service or resource can be mapped to a Model with CRUD operations.
+As dependecy, it use `Cornice` for its validators and schema abilities and `Marshmallow` for
+schema definition, serialization and deserialization (we have since split this work to
+`anyblok_marshmallow`).
 
 * Free software: Mozilla Public License Version 2.0
 * Documentation: https://anyblok-pyramid-rest-api.readthedocs.io
@@ -39,16 +41,30 @@ This blok use 'cornice', but service or resource can be mapped to a Model with C
 Features
 --------
 
-* Rest Api normalization
-* Easy CRUD resource declaration
+* Incoming request validation through schema (validation before database query and ability to
+  validate several parts of the request object)
+* CRUD queries always with request.validated data
+* Data deserialization for response through schema
+* Easy CRUD resource declaration (map a model on an endpoint)
+* Automatic schema generation based on models introspection
+* Advanced collection filtering, ordering, paging (querystring validation through schema)
 
 Todo
 ----
 
-* Schema validation
-* Advanced collection filtering
 * Helpers for JsonSchema or Swagger
 * Advanced introspection for api documentation generation
+
+Request lifecyle
+----------------
+
+incoming request 
+-> validators -> deserializer (json to dict) -> schema load -> request.validated
+                                                            -> request.errors
+request.validated -> crud -> resulting records
+-> deserializer (records to schema dump)
+-> serializer (default pyramid / cornice dict to json serializer)
+-> response
 
 Author
 ------

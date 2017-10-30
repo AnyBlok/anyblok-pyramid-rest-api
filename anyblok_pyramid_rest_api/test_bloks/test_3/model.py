@@ -53,4 +53,4 @@ class Address:
     city = Many2One(model=Declarations.Model.City, nullable=False)
     customer = Many2One(
         model=Declarations.Model.Customer, nullable=False,
-        one2many="addresses")
+        foreign_key_options={'ondelete': 'cascade'}, one2many="addresses")
