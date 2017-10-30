@@ -44,8 +44,8 @@ class AddressRequestSchema(FullRequestSchema):
 
 
 class AddressFullSchema(Schema):
-    post_collection = fields.Nested(AddressRequestSchema(only='body'))
-    get_collection = fields.Nested(AddressRequestSchema(only='querystring'))
+    collection_post = fields.Nested(AddressRequestSchema(only='body'))
+    collection_get = fields.Nested(AddressRequestSchema(only='querystring'))
     get = fields.Nested(AddressRequestSchema(only='path'))
     put = fields.Nested(AddressRequestSchema(only=('body', 'path')))
     patch = fields.Nested(AddressRequestSchema(only=('body', 'path')))
@@ -82,8 +82,8 @@ class CustomerRequestSchema(FullRequestSchema):
 
 
 class CustomerFullSchema(Schema):
-    post_collection = fields.Nested(CustomerRequestSchema(only='body'))
-    get_collection = fields.Nested(CustomerRequestSchema(only='querystring'))
+    collection_post = fields.Nested(CustomerRequestSchema(only='body'))
+    collection_get = fields.Nested(CustomerRequestSchema(only='querystring'))
     get = fields.Nested(CustomerRequestSchema(only='path'))
     put = fields.Nested(CustomerRequestSchema(only=('body', 'path')))
     patch = fields.Nested(CustomerRequestSchema(only=('body', 'path')))

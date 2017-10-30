@@ -126,6 +126,7 @@ def full_validator(request, schema=None, deserializer=None, **kwargs):
 
     if schema is None:
         return
+    kwargs['schema'] = schema
 
     full = deserializer(request)
     if request.anyblok:
@@ -161,4 +162,7 @@ def model_schema_validator(request, schema=None, deserializer=None, **kwargs):
     if action in schema.fields.keys() and schema.fields.get(action).nested:
         schema = schema.fields.get(action).nested
 
-    return full_validator(request, schema=schema, deserializer=None, **kwargs)
+    return full_validator(request,
+                          schema=schema,
+                          deserializer=deserializer,
+                          **kwargs)

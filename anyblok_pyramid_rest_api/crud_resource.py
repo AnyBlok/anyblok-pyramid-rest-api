@@ -44,7 +44,7 @@ def get_path(request):
     if 'path' in request.validated.keys():
         return request.validated.get('path')
     else:
-        return request.path
+        return request.matchdict
 
 
 def collection_get(request, modelname):

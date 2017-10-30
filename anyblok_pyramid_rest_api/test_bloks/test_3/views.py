@@ -17,14 +17,14 @@ from anyblok_pyramid_rest_api.validator import (
 )
 
 from .schema import (
-    CustomerRequestSchema,
+    CustomerFullSchema,
     AddressRequestSchema
 )
 
 
 @resource(collection_path='/customers',
           path='/customers/{id}',
-          schema=CustomerRequestSchema(),
+          schema=CustomerFullSchema(),
           validators=(model_schema_validator,))
 class CustomerResource(CrudResource):
     model = 'Model.Customer'

@@ -264,6 +264,21 @@ class TestCrudResourceModelSchema(PyramidDBTestCase):
         # TODO: this actually fail like an empty body where it should fail on
         # schema input validation. We probably need a new validator
 
+    def test_customer_put(self):
+        """Customer PUT /customers/{id}"""
+        ex = self.create_customer()
+        response = self.webserver.put_json(
+            '/customers/%s' % ex.id, {'name': 'bobby'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body.get('name'), "bobby")
+
+    def test_customer_put_bad_value_in_path(self):
+        """Customer FAILED PUT /customers/{id}"""
+        self.create_customer()
+        fail = self.webserver.put_json(
+            '/customers/0', {'name': 'plip'}, status=404)
+        self.assertEqual(fail.status_code, 404)
+
     def test_customer_delete(self):
         """Customer DELETE /customers/{id}"""
         ex = self.create_customer()
