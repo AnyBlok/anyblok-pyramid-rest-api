@@ -28,11 +28,39 @@ def get_model(registry, modelname):
 
 
 def get_item(registry, modelname, path={}):
+    """Given a a modelname and a path returns a single record.
+    Path must match a primary key column.
+    """
     model = get_model(registry, modelname)
     model_pks = model.get_primary_keys()
     pks = {x: path[x] for x in model_pks}
     item = model.from_primary_keys(**pks)
     return item
+
+
+def get_path(request):
+    """Ensure we get a valid path
+    """
+    if 'path' in request.validated.keys():
+        return request.validated.get('path')
+    else:
+        return request.matchdict
+
+
+def get_dschema(request, key='dschema'):
+    """Try to return a deserialization schema
+    for body response
+    """
+    dschema = None
+    if hasattr(request.current_service, 'schema'):
+        if key in request.current_service.schema.fields:
+            dschema = request.current_service.schema.fields.get(key, None)
+        elif 'body' in request.current_service.schema.fields:
+            dschema = request.current_service.schema.fields.get('body', None)
+    if dschema and hasattr(dschema, 'nested'):
+        return dschema.nested
+    else:
+        return None
 
 
 def collection_get(request, modelname):
@@ -70,35 +98,55 @@ def collection_get(request, modelname):
         headers['X-Count-Records'] = str(query.count())
         # TODO: Etag / timestamp / 304 if no changes
         # TODO: Cache headers
-        return query.all().to_dict() if query.count() > 0 else dict()
+        return query.all() if query.count() > 0 else None
     else:
         # no querystring, returns all records (maybe we will want to apply
         # some default filters values
         headers['X-Count-Records'] = str(query.count())
-        return query.all().to_dict() if query.count() > 0 else dict()
+        return query.all() if query.count() > 0 else None
 
 
 def collection_post(request, modelname):
     """
     """
+    if request.errors:
+        return
+
     model = get_model(request.anyblok.registry, modelname)
     if 'body' in request.validated.keys():
-        item = model.insert(**request.validated['body'])
+        if request.validated.get('body'):
+            item = model.insert(**request.validated['body'])
+        else:
+            request.errors.add(
+                'body', '400 bad request',
+                'You can not post an empty body')
+            request.errors.status = 400
+            item = None
     else:
-        item = model.insert(**request.validated)
-    return item.to_dict()
+        if request.validated:
+            item = model.insert(**request.validated)
+        else:
+            request.errors.add(
+                'body', '400 bad request',
+                'You can not post an empty body')
+            request.errors.status = 400
+            item = None
+    return item
 
 
 def get(request, modelname):
+    """return a model instance based on path
     """
-    """
+    if request.errors:
+        return
+
     item = get_item(
         request.anyblok.registry,
         modelname,
-        request.validated.get('path', {})
+        get_path(request)
     )
     if item:
-        return item.to_dict()
+        return item
     else:
         path = ', '.join(
             ['%s=%s' % (x, y)
@@ -112,14 +160,43 @@ def get(request, modelname):
 def put(request, modelname):
     """
     """
+    if request.errors:
+        return
+
     item = get_item(
         request.anyblok.registry,
         modelname,
-        request.validated.get('path', {})
+        get_path(request)
     )
+
     if item:
         item.update(**request.validated['body'])
-        return item.to_dict()
+        return item
+    else:
+        path = ', '.join(
+            ['%s=%s' % (x, y)
+             for x, y in request.validated.get('path', {}).items()])
+        request.errors.add(
+            'path', '404 not found',
+            'Resource %s with %s does not exist.' % (modelname, path))
+        request.errors.status = 404
+
+
+def patch(request, modelname):
+    """
+    """
+    if request.errors:
+        return
+
+    item = get_item(
+        request.anyblok.registry,
+        modelname,
+        get_path(request)
+    )
+
+    if item:
+        item.update(**request.validated['body'])
+        return item
     else:
         path = ', '.join(
             ['%s=%s' % (x, y)
@@ -133,15 +210,17 @@ def put(request, modelname):
 def delete(request, modelname):
     """
     """
+    if request.errors:
+        return
+
     item = get_item(
         request.anyblok.registry,
         modelname,
-        request.validated.get('path', {})
+        get_path(request)
     )
     if item:
         item.delete()
         request.status = 204
-        return {}
     else:
         path = ', '.join(
             ['%s=%s' % (x, y)
@@ -175,26 +254,73 @@ class CrudResource(object):
 
     @cornice_view(validators=(base_validator,))
     def collection_get(self):
-        return collection_get(self.request, self.model)
+        """
+        """
+        collection = collection_get(self.request, self.model)
+        if not collection:
+            return
+        dschema = get_dschema(self.request, key='dschema_collection')
+        if dschema:
+            return dschema.dump(collection, registry=self.registry).data
+        else:
+            return collection.to_dict()
 
     @cornice_view(validators=(base_validator,))
     def collection_post(self):
-        return collection_post(self.request, self.model)
+        """
+        """
+        collection = collection_post(self.request, self.model)
+        if not collection:
+            return
+        dschema = get_dschema(self.request)
+        if dschema:
+            return dschema.dump(collection, registry=self.registry).data
+        else:
+            return collection.to_dict()
 
     @cornice_view(validators=(base_validator,))
     def get(self):
         """
         """
-        return get(self.request, self.model)
+        item = get(self.request, self.model)
+        if not item:
+            return
+        dschema = get_dschema(self.request)
+        if dschema:
+            return dschema.dump(item, registry=self.registry).data
+        else:
+            return item.to_dict()
 
     @cornice_view(validators=(base_validator,))
     def put(self):
         """
         """
-        return put(self.request, self.model)
+        item = put(self.request, self.model)
+        if not item:
+            return
+
+        dschema = get_dschema(self.request)
+        if dschema:
+            return dschema.dump(item, registry=self.registry).data
+        else:
+            return item.to_dict()
+
+    @cornice_view(validators=(base_validator,))
+    def patch(self):
+        """
+        """
+        item = patch(self.request, self.model)
+        if not item:
+            return
+        dschema = get_dschema(self.request)
+        if dschema:
+            return dschema.dump(item, registry=self.registry).data
+        else:
+            return item.to_dict()
 
     @cornice_view(validators=(base_validator,))
     def delete(self):
         """
         """
-        return delete(self.request, self.model)
+        delete(self.request, self.model)
+        return {}

@@ -68,7 +68,7 @@ class TestCrudResourceBase(PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         response = self.webserver.get('/examples')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 0)
+        self.assertEqual(response.json_body, None)
 
     def test_example_delete_bad_value_in_path(self):
         """Example FAILED DELETE /examples/{id}"""
@@ -220,13 +220,79 @@ class TestCrudResourceModelSchema(PyramidDBTestCase):
         """Customer GET /customers/{id}"""
         cu = self.create_customer()
         response = self.webserver.get('/customers/%s' % cu.id)
-        print(response.json_body)
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "bob")
+        self.assertEqual(len(response.json_body.get('addresses')), 1)
+        self.assertEqual(
+            response.json_body.get('addresses')[0].get('city').get('zipcode'),
+            "000")
 
     def test_customer_get_bad_value_in_path(self):
         """Customer FAILED GET /customers/{id}"""
+        fail = self.webserver.get('/customers/0', status=404)
+        self.assertEqual(fail.status_code, 404)
+
+    def test_customer_collection_post(self):
+        """Customer POST /customers"""
+        response = self.webserver.post_json('/customers', {'name': 'plip'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body.get('name'), "plip")
+
+    def test_customer_collection_post_partial(self):
+        """Customer POST partial /customers"""
+        response = self.webserver.post_json('/customers', {'name': 'plip'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body.get('name'), "plip")
+
+    def test_customer_collection_post_empty_body(self):
+        """Customer POST empty body /customers"""
+        fail = self.webserver.post_json(
+            '/customers', {}, status=400)
+        self.assertEqual(fail.status_code, 400)
+        self.assertEqual(fail.json_body.get('status'), 'error')
+        self.assertEqual(
+            fail.json_body.get('errors')[0].get('location'), 'body')
+        self.assertEqual(
+            fail.json_body.get('errors')[0].get('description'),
+            'You can not post an empty body')
+
+    def test_customer_collection_post_bad_key_in_body(self):
+        """Customer POST bad key in body /customers"""
+        fail = self.webserver.post_json(
+            '/customers', {'unexistingkey': 'plip'}, status=400)
+        self.assertEqual(fail.status_code, 400)
+        self.assertEqual(fail.json_body.get('status'), 'error')
+        self.assertEqual(
+            fail.json_body.get('errors')[0].get('location'), 'body')
+        self.assertEqual(
+            fail.json_body.get('errors')[0].get('name'),
+            'Validation error for body')
+
+    def test_customer_put(self):
+        """Customer PUT /customers/{id}"""
+        ex = self.create_customer()
+        response = self.webserver.put_json(
+            '/customers/%s' % ex.id, {'name': 'bobby'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body.get('name'), "bobby")
+
+    def test_customer_put_bad_value_in_path(self):
+        """Customer FAILED PUT /customers/{id}"""
         self.create_customer()
+        fail = self.webserver.put_json(
+            '/customers/0', {'name': 'plip'}, status=404)
+        self.assertEqual(fail.status_code, 404)
+
+    def test_customer_delete(self):
+        """Customer DELETE /customers/{id}"""
+        ex = self.create_customer()
+        response = self.webserver.delete('/customers/%s' % ex.id)
+        self.assertEqual(response.status_code, 200)
+        response = self.webserver.get('/customers')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body, None)
+
+    def test_customer_delete_bad_value_in_path(self):
+        """Customer FAILED DELETE /customers/{id}"""
         fail = self.webserver.get('/customers/0', status=404)
         self.assertEqual(fail.status_code, 404)
