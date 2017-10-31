@@ -47,6 +47,22 @@ def get_path(request):
         return request.matchdict
 
 
+def get_dschema(request, key='dschema'):
+    """Try to return a deserialization schema
+    for body response
+    """
+    dschema = None
+    if hasattr(request.current_service, 'schema'):
+        if key in request.current_service.schema.fields:
+            dschema = request.current_service.schema.fields.get(key, None)
+        elif 'body' in request.current_service.schema.fields:
+            dschema = request.current_service.schema.fields.get('body', None)
+    if dschema and hasattr(dschema, 'nested'):
+        return dschema.nested
+    else:
+        return None
+
+
 def collection_get(request, modelname):
     """Parse request.params, deserialize it and then build an sqla query
 
@@ -82,17 +98,20 @@ def collection_get(request, modelname):
         headers['X-Count-Records'] = str(query.count())
         # TODO: Etag / timestamp / 304 if no changes
         # TODO: Cache headers
-        return query.all().to_dict() if query.count() > 0 else dict()
+        return query.all() if query.count() > 0 else None
     else:
         # no querystring, returns all records (maybe we will want to apply
         # some default filters values
         headers['X-Count-Records'] = str(query.count())
-        return query.all().to_dict() if query.count() > 0 else dict()
+        return query.all() if query.count() > 0 else None
 
 
 def collection_post(request, modelname):
     """
     """
+    if request.errors:
+        return
+
     model = get_model(request.anyblok.registry, modelname)
     if 'body' in request.validated.keys():
         if request.validated.get('body'):
@@ -106,12 +125,21 @@ def collection_post(request, modelname):
     else:
         if request.validated:
             item = model.insert(**request.validated)
+        else:
+            request.errors.add(
+                'body', '400 bad request',
+                'You can not post an empty body')
+            request.errors.status = 400
+            item = None
     return item
 
 
 def get(request, modelname):
     """return a model instance based on path
     """
+    if request.errors:
+        return
+
     item = get_item(
         request.anyblok.registry,
         modelname,
@@ -132,6 +160,9 @@ def get(request, modelname):
 def put(request, modelname):
     """
     """
+    if request.errors:
+        return
+
     item = get_item(
         request.anyblok.registry,
         modelname,
@@ -140,7 +171,32 @@ def put(request, modelname):
 
     if item:
         item.update(**request.validated['body'])
-        return item.to_dict()
+        return item
+    else:
+        path = ', '.join(
+            ['%s=%s' % (x, y)
+             for x, y in request.validated.get('path', {}).items()])
+        request.errors.add(
+            'path', '404 not found',
+            'Resource %s with %s does not exist.' % (modelname, path))
+        request.errors.status = 404
+
+
+def patch(request, modelname):
+    """
+    """
+    if request.errors:
+        return
+
+    item = get_item(
+        request.anyblok.registry,
+        modelname,
+        get_path(request)
+    )
+
+    if item:
+        item.update(**request.validated['body'])
+        return item
     else:
         path = ', '.join(
             ['%s=%s' % (x, y)
@@ -154,6 +210,9 @@ def put(request, modelname):
 def delete(request, modelname):
     """
     """
+    if request.errors:
+        return
+
     item = get_item(
         request.anyblok.registry,
         modelname,
@@ -162,7 +221,6 @@ def delete(request, modelname):
     if item:
         item.delete()
         request.status = 204
-        return {}
     else:
         path = ', '.join(
             ['%s=%s' % (x, y)
@@ -185,8 +243,6 @@ class CrudResource(object):
     """
     model = None
     QueryString = QueryString
-    dschema_get = None
-    dschema_collection_post = None
 
     def __init__(self, request, **kwargs):
         self.request = request
@@ -196,22 +252,18 @@ class CrudResource(object):
             raise ValueError(
                 "You must provide a 'model' to use CrudResource class")
 
-    def guess_dschema(self):
-        """Guess a deserialization schema instance
-        """
-        if 'schema' in self.request.current_service.arguments.keys():
-            base = self.request.current_service.schema
-            if 'body' in base.fields.keys() and base.fields.get('body').nested:
-                dschema = base.fields.get('body').nested
-                return dschema
-            else:
-                return base
-        else:
-            return None
-
     @cornice_view(validators=(base_validator,))
     def collection_get(self):
-        return collection_get(self.request, self.model)
+        """
+        """
+        collection = collection_get(self.request, self.model)
+        if not collection:
+            return
+        dschema = get_dschema(self.request, key='dschema_collection')
+        if dschema:
+            return dschema.dump(collection, registry=self.registry).data
+        else:
+            return collection.to_dict()
 
     @cornice_view(validators=(base_validator,))
     def collection_post(self):
@@ -220,12 +272,9 @@ class CrudResource(object):
         collection = collection_post(self.request, self.model)
         if not collection:
             return
-        if self.dschema_collection_post:
-            dschema = self.dschema_collection_post
-        else:
-            dschema = self.guess_dschema()
+        dschema = get_dschema(self.request)
         if dschema:
-            return dschema.dump(collection).data
+            return dschema.dump(collection, registry=self.registry).data
         else:
             return collection.to_dict()
 
@@ -236,12 +285,9 @@ class CrudResource(object):
         item = get(self.request, self.model)
         if not item:
             return
-        if self.dschema_get:
-            dschema = self.dschema_get
-        else:
-            dschema = self.guess_dschema()
+        dschema = get_dschema(self.request)
         if dschema:
-            return dschema.dump(item).data
+            return dschema.dump(item, registry=self.registry).data
         else:
             return item.to_dict()
 
@@ -249,10 +295,32 @@ class CrudResource(object):
     def put(self):
         """
         """
-        return put(self.request, self.model)
+        item = put(self.request, self.model)
+        if not item:
+            return
+
+        dschema = get_dschema(self.request)
+        if dschema:
+            return dschema.dump(item, registry=self.registry).data
+        else:
+            return item.to_dict()
+
+    @cornice_view(validators=(base_validator,))
+    def patch(self):
+        """
+        """
+        item = patch(self.request, self.model)
+        if not item:
+            return
+        dschema = get_dschema(self.request)
+        if dschema:
+            return dschema.dump(item, registry=self.registry).data
+        else:
+            return item.to_dict()
 
     @cornice_view(validators=(base_validator,))
     def delete(self):
         """
         """
-        return delete(self.request, self.model)
+        delete(self.request, self.model)
+        return {}

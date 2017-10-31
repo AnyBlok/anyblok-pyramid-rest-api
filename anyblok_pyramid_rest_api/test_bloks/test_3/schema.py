@@ -5,7 +5,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
-from marshmallow import fields, Schema
+from marshmallow import Schema, fields, validates_schema, ValidationError
 
 from anyblok_marshmallow.schema import ModelSchema
 from anyblok_pyramid_rest_api.schema import (
@@ -31,7 +31,6 @@ class AddressSchema(ModelSchema):
     city = fields.Nested(CitySchema)
 
     class Meta:
-        strict = True
         model = 'Model.Address'
 
 
@@ -62,29 +61,32 @@ class CustomerSchema(ModelSchema):
     addresses = fields.Nested(AddressSchema, many=True, exclude=('customer', ))
     tags = fields.Nested(TagSchema, many=True)
 
+    @validates_schema(pass_original=True)
+    def check_unknown_fields(self, data, original_data):
+        unknown = set(original_data) - set(self.fields)
+        if unknown:
+            raise ValidationError('Unknown field', unknown)
+
     class Meta:
-        strict = True
         model = 'Model.Customer'
-        # optionally attach an AnyBlok registry
-        # to use for serialization, desarialization and validation
-        # registry = registry
-        # optionally return an AnyBlok model instance
-        # post_load_return_instance = True
 
 
 class CustomerRequestSchema(FullRequestSchema):
     """Request validation for CustomerSchema
     """
-    body = fields.Nested(CustomerSchema(
-        partial=('name', 'tags', 'addresses')))
+    body = fields.Nested(CustomerSchema(partial=True))
     path = fields.Nested(CustomerSchema(only=('id',)))
     querystring = fields.Nested(CustomerSchema(partial=True))
 
 
 class CustomerFullSchema(Schema):
-    collection_post = fields.Nested(CustomerRequestSchema(only='body'))
-    collection_get = fields.Nested(CustomerRequestSchema(only='querystring'))
-    get = fields.Nested(CustomerRequestSchema(only='path'))
-    put = fields.Nested(CustomerRequestSchema(only=('body', 'path')))
-    patch = fields.Nested(CustomerRequestSchema(only=('body', 'path')))
-    delete = fields.Nested(CustomerRequestSchema(only='path'))
+    # fields for incoming request validation
+    collection_post = fields.Nested(CustomerRequestSchema(only=('body',)))
+    collection_get = fields.Nested(CustomerRequestSchema(only=('querystring',)))
+    get = fields.Nested(CustomerRequestSchema(only=('path',)))
+    put = fields.Nested(CustomerRequestSchema(only=('body', 'path',)))
+    patch = fields.Nested(CustomerRequestSchema(only=('body', 'path',)))
+    delete = fields.Nested(CustomerRequestSchema(only=('path',)))
+    # fields for response deserialization
+    dschema = fields.Nested(CustomerSchema())
+    dschema_collection = fields.Nested(CustomerSchema(many=True))

@@ -126,7 +126,6 @@ def full_validator(request, schema=None, deserializer=None, **kwargs):
 
     if schema is None:
         return
-    kwargs['schema'] = schema
 
     full = deserializer(request)
     if request.anyblok:
