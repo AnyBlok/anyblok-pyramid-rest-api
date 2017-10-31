@@ -39,7 +39,7 @@ class AddressRequestSchema(FullRequestSchema):
     """
     body = fields.Nested(AddressSchema(
         partial=('tags', 'addresses')))
-    path = fields.Nested(AddressSchema(only=('id',)))
+    path = fields.Nested(AddressSchema(only_primary_key=True))
 
 
 class AddressFullSchema(Schema):
@@ -75,7 +75,7 @@ class CustomerRequestSchema(FullRequestSchema):
     """Request validation for CustomerSchema
     """
     body = fields.Nested(CustomerSchema(partial=True))
-    path = fields.Nested(CustomerSchema(only=('id',)))
+    path = fields.Nested(CustomerSchema(only_primary_key=True))
     querystring = fields.Nested(CustomerSchema(partial=True))
 
 
