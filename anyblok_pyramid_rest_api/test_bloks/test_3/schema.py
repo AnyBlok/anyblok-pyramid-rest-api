@@ -5,9 +5,10 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
-from marshmallow import Schema, fields, validates_schema, ValidationError
+from marshmallow import Schema, validates_schema, ValidationError
 
 from anyblok_marshmallow.schema import ModelSchema
+from anyblok_marshmallow.fields import Nested
 from anyblok_pyramid_rest_api.schema import (
     FullRequestSchema,
 )
@@ -28,7 +29,7 @@ class TagSchema(ModelSchema):
 class AddressSchema(ModelSchema):
 
     # follow the relationship Many2One and One2One
-    city = fields.Nested(CitySchema)
+    city = Nested(CitySchema)
 
     class Meta:
         model = 'Model.Address'
@@ -37,18 +38,18 @@ class AddressSchema(ModelSchema):
 class AddressRequestSchema(FullRequestSchema):
     """Request validation for AddressSchema
     """
-    body = fields.Nested(AddressSchema(
+    body = Nested(AddressSchema(
         partial=('tags', 'addresses')))
-    path = fields.Nested(AddressSchema(only=('id',)))
+    path = Nested(AddressSchema(only_primary_key=True))
 
 
 class AddressFullSchema(Schema):
-    collection_post = fields.Nested(AddressRequestSchema(only='body'))
-    collection_get = fields.Nested(AddressRequestSchema(only='querystring'))
-    get = fields.Nested(AddressRequestSchema(only='path'))
-    put = fields.Nested(AddressRequestSchema(only=('body', 'path')))
-    patch = fields.Nested(AddressRequestSchema(only=('body', 'path')))
-    delete = fields.Nested(AddressRequestSchema(only='path'))
+    collection_post = Nested(AddressRequestSchema(only='body'))
+    collection_get = Nested(AddressRequestSchema(only='querystring'))
+    get = Nested(AddressRequestSchema(only='path'))
+    put = Nested(AddressRequestSchema(only=('body', 'path')))
+    patch = Nested(AddressRequestSchema(only=('body', 'path')))
+    delete = Nested(AddressRequestSchema(only='path'))
 
 
 class CustomerSchema(ModelSchema):
@@ -58,8 +59,8 @@ class CustomerSchema(ModelSchema):
     # follow the relationship One2Many and Many2Many
     # - the many=True is required because it is *2Many
     # - exclude is used to forbid the recurse loop
-    addresses = fields.Nested(AddressSchema, many=True, exclude=('customer', ))
-    tags = fields.Nested(TagSchema, many=True)
+    addresses = Nested(AddressSchema, many=True, exclude=('customer', ))
+    tags = Nested(TagSchema, many=True)
 
     @validates_schema(pass_original=True)
     def check_unknown_fields(self, data, original_data):
@@ -74,19 +75,19 @@ class CustomerSchema(ModelSchema):
 class CustomerRequestSchema(FullRequestSchema):
     """Request validation for CustomerSchema
     """
-    body = fields.Nested(CustomerSchema(partial=True))
-    path = fields.Nested(CustomerSchema(only=('id',)))
-    querystring = fields.Nested(CustomerSchema(partial=True))
+    body = Nested(CustomerSchema(partial=True))
+    path = Nested(CustomerSchema(only_primary_key=True))
+    querystring = Nested(CustomerSchema(partial=True))
 
 
 class CustomerFullSchema(Schema):
     # fields for incoming request validation
-    collection_post = fields.Nested(CustomerRequestSchema(only=('body',)))
-    collection_get = fields.Nested(CustomerRequestSchema(only=('querystring',)))
-    get = fields.Nested(CustomerRequestSchema(only=('path',)))
-    put = fields.Nested(CustomerRequestSchema(only=('body', 'path',)))
-    patch = fields.Nested(CustomerRequestSchema(only=('body', 'path',)))
-    delete = fields.Nested(CustomerRequestSchema(only=('path',)))
+    collection_post = Nested(CustomerRequestSchema(only=('body',)))
+    collection_get = Nested(CustomerRequestSchema(only=('querystring',)))
+    get = Nested(CustomerRequestSchema(only=('path',)))
+    put = Nested(CustomerRequestSchema(only=('body', 'path',)))
+    patch = Nested(CustomerRequestSchema(only=('body', 'path',)))
+    delete = Nested(CustomerRequestSchema(only=('path',)))
     # fields for response deserialization
-    dschema = fields.Nested(CustomerSchema())
-    dschema_collection = fields.Nested(CustomerSchema(many=True))
+    dschema = Nested(CustomerSchema())
+    dschema_collection = Nested(CustomerSchema(many=True))
