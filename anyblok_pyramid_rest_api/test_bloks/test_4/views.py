@@ -18,28 +18,28 @@ from anyblok_pyramid_rest_api.validator import (
 )
 
 from .schema import (
-    CustomerFullSchema,
-    AddressRequestSchema
+    CustomerApiSchema,
+    AddressApiSchema
 )
 
 
 @resource(
-    collection_path='/customers/v3',
-    path='/customers/v3/{id}',
-    schema=CustomerFullSchema(),
+    collection_path='/customers/v4',
+    path='/customers/v4/{id}',
+    schema=CustomerApiSchema(),
     validators=(model_schema_validator,),
     installed_blok=current_blok()
 )
-class CustomerResourceV3(CrudResource):
+class CustomerResourceV4(CrudResource):
     model = 'Model.Customer'
 
 
 @resource(
-    collection_path='/addresses/v3',
-    path='/addresses/v3/{id}',
-    schema=AddressRequestSchema(),
+    collection_path='/addresses/v4',
+    path='/addresses/v4/{id}',
+    schema=AddressApiSchema(),
     validators=(full_validator,),
     installed_blok=current_blok()
 )
-class AddressResourceV3(CrudResource):
+class AddressResourceV4(CrudResource):
     model = 'Model.Address'

@@ -194,17 +194,8 @@ class TestCrudResourceBaseValidator(PyramidDBTestCase):
         self.assertEqual(fail.status_code, 404)
 
 
-class TestCrudResourceModelSchema(PyramidDBTestCase):
-    """Test Customers and Addresses from
-    test_bloks/test_3/views.py
-    """
-
+class CrudResourceSchema:
     blok_entry_points = ('bloks', 'test_bloks',)
-
-    def setUp(self):
-        super(TestCrudResourceModelSchema, self).setUp()
-        self.registry = self.init_registry(None)
-        self.registry.upgrade(install=('test_rest_api_3',))
 
     def create_customer(self, name="bob"):
         """Create a dummy customer record"""
@@ -219,7 +210,7 @@ class TestCrudResourceModelSchema(PyramidDBTestCase):
     def test_customer_get(self):
         """Customer GET /customers/{id}"""
         cu = self.create_customer()
-        response = self.webserver.get('/customers/%s' % cu.id)
+        response = self.webserver.get(self.path % cu.id)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "bob")
         self.assertEqual(len(response.json_body.get('addresses')), 1)
@@ -229,25 +220,27 @@ class TestCrudResourceModelSchema(PyramidDBTestCase):
 
     def test_customer_get_bad_value_in_path(self):
         """Customer FAILED GET /customers/{id}"""
-        fail = self.webserver.get('/customers/0', status=404)
+        fail = self.webserver.get(self.path % '0', status=404)
         self.assertEqual(fail.status_code, 404)
 
     def test_customer_collection_post(self):
         """Customer POST /customers"""
-        response = self.webserver.post_json('/customers', {'name': 'plip'})
+        response = self.webserver.post_json(self.collection_path,
+                                            {'name': 'plip'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plip")
 
     def test_customer_collection_post_partial(self):
         """Customer POST partial /customers"""
-        response = self.webserver.post_json('/customers', {'name': 'plip'})
+        response = self.webserver.post_json(self.collection_path,
+                                            {'name': 'plip'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plip")
 
     def test_customer_collection_post_empty_body(self):
         """Customer POST empty body /customers"""
         fail = self.webserver.post_json(
-            '/customers', {}, status=400)
+            self.collection_path, {}, status=400)
         self.assertEqual(fail.status_code, 400)
         self.assertEqual(fail.json_body.get('status'), 'error')
         self.assertEqual(
@@ -259,7 +252,7 @@ class TestCrudResourceModelSchema(PyramidDBTestCase):
     def test_customer_collection_post_bad_key_in_body(self):
         """Customer POST bad key in body /customers"""
         fail = self.webserver.post_json(
-            '/customers', {'unexistingkey': 'plip'}, status=400)
+            self.collection_path, {'unexistingkey': 'plip'}, status=400)
         self.assertEqual(fail.status_code, 400)
         self.assertEqual(fail.json_body.get('status'), 'error')
         self.assertEqual(
@@ -272,7 +265,7 @@ class TestCrudResourceModelSchema(PyramidDBTestCase):
         """Customer PUT /customers/{id}"""
         ex = self.create_customer()
         response = self.webserver.put_json(
-            '/customers/%s' % ex.id, {'name': 'bobby'})
+            self.path % ex.id, {'name': 'bobby'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "bobby")
 
@@ -280,19 +273,45 @@ class TestCrudResourceModelSchema(PyramidDBTestCase):
         """Customer FAILED PUT /customers/{id}"""
         self.create_customer()
         fail = self.webserver.put_json(
-            '/customers/0', {'name': 'plip'}, status=404)
+            self.path % '0', {'name': 'plip'}, status=404)
         self.assertEqual(fail.status_code, 404)
 
     def test_customer_delete(self):
         """Customer DELETE /customers/{id}"""
         ex = self.create_customer()
-        response = self.webserver.delete('/customers/%s' % ex.id)
+        response = self.webserver.delete(self.path % ex.id)
         self.assertEqual(response.status_code, 200)
-        response = self.webserver.get('/customers')
+        response = self.webserver.get(self.collection_path)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body, None)
 
     def test_customer_delete_bad_value_in_path(self):
         """Customer FAILED DELETE /customers/{id}"""
-        fail = self.webserver.get('/customers/0', status=404)
+        fail = self.webserver.get(self.path % '0', status=404)
         self.assertEqual(fail.status_code, 404)
+
+
+class TestCrudResourceModelSchema(CrudResourceSchema, PyramidDBTestCase):
+    """Test Customers and Addresses from
+    test_bloks/test_3/views.py
+    """
+
+    def setUp(self):
+        super(TestCrudResourceModelSchema, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_3',))
+        self.collection_path = '/customers/v3'
+        self.path = '/customers/v3/%s'
+
+
+class TestCrudResourceApiSchema(CrudResourceSchema, PyramidDBTestCase):
+    """Test Customers and Addresses from
+    test_bloks/test_4/views.py
+    """
+
+    def setUp(self):
+        super(TestCrudResourceApiSchema, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_4',))
+        self.collection_path = '/customers/v4'
+        self.path = '/customers/v4/%s'

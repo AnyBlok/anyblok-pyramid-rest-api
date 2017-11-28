@@ -8,17 +8,11 @@
 from anyblok.tests.testcase import DBTestCase
 
 from ..test_bloks.test_3.schema import CustomerFullSchema
+from ..test_bloks.test_4.schema import CustomerApiSchema
 
 
-class TestModelSchema(DBTestCase):
+class SchemaBase:
     blok_entry_points = ('bloks', 'test_bloks',)
-
-    def setUp(self):
-        super(TestModelSchema, self).setUp()
-        self.registry = self.init_registry(None)
-        self.registry.upgrade(install=('test_rest_api_3',))
-        self.customer_schema = CustomerFullSchema(
-            context={'registry': self.registry})
 
     def test_customer_schema_collection_post_load(self):
         """
@@ -56,3 +50,23 @@ class TestModelSchema(DBTestCase):
         self.assertEqual(len(error), 0)
         self.assertEqual(len(data['delete'].keys()), 1)
         self.assertEqual(data['delete']['path']['id'], 1)
+
+
+class TestModelSchema(SchemaBase, DBTestCase):
+
+    def setUp(self):
+        super(TestModelSchema, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_3',))
+        self.customer_schema = CustomerFullSchema(
+            context={'registry': self.registry})
+
+
+class TestAnySchema(SchemaBase, DBTestCase):
+
+    def setUp(self):
+        super(TestAnySchema, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_4',))
+        self.customer_schema = CustomerApiSchema(
+            context={'registry': self.registry})
