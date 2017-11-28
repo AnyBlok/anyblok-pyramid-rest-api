@@ -61,9 +61,3 @@ class CustomerApiSchema(ApiSchema):
         model = 'Model.Customer'
         deserialization_model_schema = CustomerSchema
         serialization_model_schema = CustomerSchema
-
-
-class BlokApiSchema(ApiSchema):
-
-    class Meta:
-        model = 'Model.System.Blok'
