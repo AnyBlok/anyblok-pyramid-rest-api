@@ -8,6 +8,7 @@
 """A set of reusable basic schemas"""
 from marshmallow import Schema, fields, ValidationError, validates_schema
 from anyblok_marshmallow.schema import ModelSchema
+from anyblok_marshmallow.fields import Nested
 from marshmallow.schema import SchemaOpts, SchemaMeta
 from marshmallow.compat import with_metaclass
 
@@ -74,10 +75,13 @@ class ApiSchemaOptions(SchemaOpts):
         # deserialization : model
         self.deserialization_model_schema = getattr(
             meta, 'deserialization_model_schema', None)
-        self.request_fields = getattr(meta, 'request_fields', [])
+        self.request_fields = getattr(
+            meta, 'request_fields', ['path', 'body', 'querystring'])
         if not isinstance(self.request_fields, (list, tuple)):
             raise Exception("bad type")
 
+        self.path_opts = getattr(
+            meta, 'path_opts', {'only_primary_key': True})
         self.body_opts = getattr(
             meta, 'body_opts', {'partial': True})
         self.querystring_opts = getattr(
@@ -123,7 +127,7 @@ class ApiSchemaMeta(SchemaMeta):
 
         if deserialization_request_schema:
             for field in deserialization_fields:
-                declared_fields[field] = fields.Nested(
+                declared_fields[field] = Nested(
                     deserialization_request_schema(
                         **getattr(opts, field + '_opts', {})
                     )
@@ -131,7 +135,7 @@ class ApiSchemaMeta(SchemaMeta):
 
         if serialization_model_schema:
             for field in serialization_fields:
-                declared_fields[field] = fields.Nested(
+                declared_fields[field] = Nested(
                     serialization_model_schema(
                         **getattr(opts, field + '_opts', {})
                     )
@@ -159,7 +163,7 @@ class ApiSchemaMeta(SchemaMeta):
 
         if deserialization_model_schema:
             for field in opts.request_fields:
-                properties[field] = fields.Nested(
+                properties[field] = Nested(
                     deserialization_model_schema(
                         **getattr(opts, field + '_opts', {})
                     )
