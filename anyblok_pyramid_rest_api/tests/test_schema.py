@@ -6,19 +6,14 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 from anyblok.tests.testcase import DBTestCase
+from anyblok_pyramid_rest_api.schema import ApiSchema
 
 from ..test_bloks.test_3.schema import CustomerFullSchema
+from ..test_bloks.test_4.schema import CustomerApiSchema
 
 
-class TestModelSchema(DBTestCase):
+class SchemaBase:
     blok_entry_points = ('bloks', 'test_bloks',)
-
-    def setUp(self):
-        super(TestModelSchema, self).setUp()
-        self.registry = self.init_registry(None)
-        self.registry.upgrade(install=('test_rest_api_3',))
-        self.customer_schema = CustomerFullSchema(
-            context={'registry': self.registry})
 
     def test_customer_schema_collection_post_load(self):
         """
@@ -56,3 +51,41 @@ class TestModelSchema(DBTestCase):
         self.assertEqual(len(error), 0)
         self.assertEqual(len(data['delete'].keys()), 1)
         self.assertEqual(data['delete']['path']['id'], 1)
+
+
+class TestModelSchema(SchemaBase, DBTestCase):
+
+    def setUp(self):
+        super(TestModelSchema, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_3',))
+        self.customer_schema = CustomerFullSchema(
+            context={'registry': self.registry})
+
+
+class TestApiSchema(SchemaBase, DBTestCase):
+
+    def setUp(self):
+        super(TestApiSchema, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_4',))
+        self.customer_schema = CustomerApiSchema(
+            context={'registry': self.registry})
+
+
+class TestSimpleApiSchema(DBTestCase):
+
+    def test_simple_schema(self):
+
+        class BlokApiSchema(ApiSchema):
+
+            class Meta:
+                model = 'Model.System.Blok'
+
+        registry = self.init_registry(None)
+        schema = BlokApiSchema()
+        schema.context['registry'] = registry
+        body = {'body': {'name': 'anyblok-core'}}
+        data, error = schema.load({'collection_post': body})
+        self.assertEqual(len(error), 0)
+        self.assertEqual(len(data['collection_post'].keys()), 1)
