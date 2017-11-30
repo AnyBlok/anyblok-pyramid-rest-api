@@ -173,6 +173,10 @@ def model_schema_validator(request, schema=None, deserializer=None, **kwargs):
                     (ApiSchema,),
                     {'Meta': type('Meta', tuple(), metaProperties)}
                 )()
+
+            # put the build schema in the request because the crud_resource
+            # need a dschema and dschema_collection, it is the only way
+            request.current_service.schema = schema
         else:
             # raise error we must have a schema
             raise TypeError(
