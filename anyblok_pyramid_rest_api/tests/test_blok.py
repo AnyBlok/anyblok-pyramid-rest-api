@@ -45,3 +45,11 @@ class TestCrudBlok(PyramidDBTestCase):
         self.init_registry(None)
         with self.assertRaises(RegistryManagerException):
             self.webserver.get('/bad/model')
+
+    def test_model_schema_validator_get(self):
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_5',))
+        response = self.webserver.get('/bloks/v5/anyblok-core')
+        self.assertEqual(response.status_code, 200)
+        self.maxDiff = None
+        self.assertEqual(response.json_body, {})

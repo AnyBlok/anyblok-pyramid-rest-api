@@ -315,3 +315,17 @@ class TestCrudResourceApiSchema(CrudResourceSchema, PyramidDBTestCase):
         self.registry.upgrade(install=('test_rest_api_4',))
         self.collection_path = '/customers/v4'
         self.path = '/customers/v4/%s'
+
+
+class TestCrudResourceModelSchemaValidator(CrudResourceSchema,
+                                           PyramidDBTestCase):
+    """Test Customers and Addresses from
+    test_bloks/test_5/views.py
+    """
+
+    def setUp(self):
+        super(TestCrudResourceModelSchemaValidator, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_5',))
+        self.collection_path = '/customers/v5'
+        self.path = '/customers/v5/%s'
