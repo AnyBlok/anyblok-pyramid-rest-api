@@ -19,7 +19,8 @@ from anyblok_pyramid_rest_api.validator import (
 
 from .schema import (
     CustomerApiSchema,
-    AddressApiSchema
+    AddressApiSchema,
+    BlokApiSchema
 )
 
 
@@ -43,3 +44,14 @@ class CustomerResourceV4(CrudResource):
 )
 class AddressResourceV4(CrudResource):
     model = 'Model.Address'
+
+
+@resource(
+    collection_path='/bloks/v4',
+    path='/bloks/v4/{name}',
+    schema=BlokApiSchema(),
+    validators=(model_schema_validator,),
+    installed_blok=current_blok()
+)
+class BlokResourceV4(CrudResource):
+    model = 'Model.System.Blok'

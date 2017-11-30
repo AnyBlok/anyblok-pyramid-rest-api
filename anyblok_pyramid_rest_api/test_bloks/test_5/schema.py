@@ -43,11 +43,3 @@ class CustomerSchema(ModelSchema):
 
     class Meta:
         model = 'Model.Customer'
-
-
-# class CustomerApiSchema(ApiSchema):
-#
-#     class Meta:
-#         model = 'Model.Customer'
-#         deserialization_model_schema = CustomerSchema
-#         serialization_model_schema = CustomerSchema

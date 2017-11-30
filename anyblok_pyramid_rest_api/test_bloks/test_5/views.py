@@ -67,7 +67,8 @@ class BlokResourceV5(CrudResource):
     @classmethod
     def apischema_properties(cls, metaProperties):
         metaProperties.update({
-            'dschema_opts': {'only_primary_key': True},
+            'dschema_opts': {
+                'only': ['author', 'order', 'name', 'state']},
             'dschema_collection_opts': {
                 'only': ['author', 'order', 'name', 'state']},
         })
