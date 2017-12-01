@@ -45,3 +45,49 @@ class TestCrudBlok(PyramidDBTestCase):
         self.init_registry(None)
         with self.assertRaises(RegistryManagerException):
             self.webserver.get('/bad/model')
+
+
+class CrudResourceBlok:
+
+    blok_entry_points = ('bloks', 'test_bloks')
+
+    def test_model_schema_validator_get(self):
+        response = self.webserver.get(self.path % 'anyblok-core')
+        self.assertEqual(response.status_code, 200)
+        # self.maxDiff = None
+        self.assertEqual(
+            response.json_body,
+            {
+                'author': 'Suzanne Jean-Sébastien',
+                'name': 'anyblok-core',
+                'order': 0,
+                'state': 'installed',
+            }
+        )
+
+
+class TestCrudResourceBlokApiSchema(CrudResourceBlok, PyramidDBTestCase):
+    """Test Customers and Addresses from
+    test_bloks/test_4/views.py
+    """
+
+    def setUp(self):
+        super(TestCrudResourceBlokApiSchema, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_4',))
+        self.collection_path = '/bloks/v4'
+        self.path = '/bloks/v4/%s'
+
+
+class TestCrudResourceBlokModelSchemaValidator(CrudResourceBlok,
+                                               PyramidDBTestCase):
+    """Test Customers and Addresses from
+    test_bloks/test_5/views.py
+    """
+
+    def setUp(self):
+        super(TestCrudResourceBlokModelSchemaValidator, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_5',))
+        self.collection_path = '/bloks/v5'
+        self.path = '/bloks/v5/%s'

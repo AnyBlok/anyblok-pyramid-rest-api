@@ -44,6 +44,7 @@ test_bloks = [
     'test_rest_api_2=anyblok_pyramid_rest_api.test_bloks.test_2:TestBlok2',
     'test_rest_api_3=anyblok_pyramid_rest_api.test_bloks.test_3:TestBlok3',
     'test_rest_api_4=anyblok_pyramid_rest_api.test_bloks.test_4:TestBlok4',
+    'test_rest_api_5=anyblok_pyramid_rest_api.test_bloks.test_5:TestBlok5',
 ]
 
 setup(

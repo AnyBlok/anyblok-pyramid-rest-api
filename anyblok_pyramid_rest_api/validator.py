@@ -7,6 +7,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 from cornice.validators import extract_cstruct
+from .schema import ApiSchema
 
 
 FILTER_OPERATORS = [
@@ -145,10 +146,42 @@ def model_schema_validator(request, schema=None, deserializer=None, **kwargs):
     """
     """
     if schema is None:
-        # raise error we must have a schema
-        raise TypeError(
-            "You must provide a schema to your view when using "
-            "`model_schema_validator`")
+        klass = kwargs.get('klass', None)
+        if klass and getattr(klass, 'model', None):
+            metaProperties = {}
+            if hasattr(klass, 'apischema_properties'):
+                klass.apischema_properties(metaProperties)
+
+            metaProperties.update({'model': klass.model})
+            if getattr(klass, 'schema_defined_by', None):
+                if request.anyblok:
+                    registry = request.anyblok.registry
+                    Model = registry.get(klass.model)
+                    schema = getattr(Model, klass.schema_defined_by)(
+                        request=request, klass=klass,
+                        metaProperties=metaProperties
+                    )
+                else:
+                    # raise error we must have a schema
+                    raise TypeError(
+                        "No AnyBlok registry to define schema "
+                        "`model_schema_validator`")
+
+            else:
+                schema = type(
+                    'Api.Schema.%s' % klass.model,
+                    (ApiSchema,),
+                    {'Meta': type('Meta', tuple(), metaProperties)}
+                )()
+
+            # put the build schema in the request because the crud_resource
+            # need a dschema and dschema_collection, it is the only way
+            request.current_service.schema = schema
+        else:
+            # raise error we must have a schema
+            raise TypeError(
+                "You must provide a schema to your view when using "
+                "`model_schema_validator`")
 
     if deserializer is None:
         deserializer = extract_cstruct

@@ -6,7 +6,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 """A set of reusable basic schemas"""
-from marshmallow import Schema, fields, ValidationError, validates_schema
+from marshmallow import Schema, fields
 from anyblok_marshmallow.schema import ModelSchema
 from anyblok_marshmallow.fields import Nested
 from marshmallow.schema import SchemaOpts, SchemaMeta
@@ -34,16 +34,6 @@ class FullRequestSchema(Schema):
     querystring = fields.Dict()
     headers = fields.Dict()
     cookies = fields.Dict()
-
-
-class AnySchema(ModelSchema):
-    """Schema for 'Model.Any'
-    """
-    @validates_schema(pass_original=True)
-    def check_unknown_fields(self, data, original_data):
-        unknown = set(original_data) - set(self.fields)
-        if unknown:
-            raise ValidationError('Unknown field', unknown)
 
 
 class ApiSchemaOptions(SchemaOpts):
@@ -149,7 +139,7 @@ class ApiSchemaMeta(SchemaMeta):
         properties = {
             'Meta': type('Meta', tuple(), dict(model=opts.model))
         }
-        return type(name, (AnySchema,), properties)
+        return type(name, (ModelSchema,), properties)
 
     @classmethod
     def getDeserializationRequestSchema(cls, opts):
@@ -177,7 +167,7 @@ class ApiSchemaMeta(SchemaMeta):
         properties = {
             'Meta': type('Meta', tuple(), dict(model=opts.model))
         }
-        return type(name, (AnySchema,), properties)
+        return type(name, (ModelSchema,), properties)
 
 
 class ApiSchema(with_metaclass(ApiSchemaMeta, Schema)):

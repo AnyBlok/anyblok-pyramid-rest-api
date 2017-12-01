@@ -8,7 +8,6 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 from anyblok_marshmallow.schema import ModelSchema
 from anyblok_marshmallow.fields import Nested
-from anyblok_pyramid_rest_api.schema import ApiSchema
 
 
 class CitySchema(ModelSchema):
@@ -32,15 +31,6 @@ class AddressSchema(ModelSchema):
         model = 'Model.Address'
 
 
-class AddressApiSchema(ApiSchema):
-
-    class Meta:
-        model = 'Model.Address'
-        request_fields = ('body', 'path')
-        deserialization_model_schema = AddressSchema
-        serialization_model_schema = AddressSchema
-
-
 class CustomerSchema(ModelSchema):
     """Schema for 'Model.Customer'
     """
@@ -53,21 +43,3 @@ class CustomerSchema(ModelSchema):
 
     class Meta:
         model = 'Model.Customer'
-
-
-class CustomerApiSchema(ApiSchema):
-
-    class Meta:
-        model = 'Model.Customer'
-        deserialization_model_schema = CustomerSchema
-        serialization_model_schema = CustomerSchema
-
-
-class BlokApiSchema(ApiSchema):
-
-    class Meta:
-        model = 'Model.System.Blok'
-        dschema_opts = {
-            'only': ['author', 'order', 'name', 'state']}
-        dschema_collection_opts = {
-            'only': ['author', 'order', 'name', 'state']}
