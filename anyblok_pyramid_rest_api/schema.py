@@ -46,7 +46,8 @@ class ApiSchemaOptions(SchemaOpts):
             meta, 'serialization_model_schema', None)
         self.dschema_opts = getattr(meta, 'dschema_opts', {})
         self.dschema_collection_opts = getattr(
-            meta, 'dschema_collection_opts', {'many': True})
+            meta, 'dschema_collection_opts', {})
+        self.dschema_collection_opts.update(dict(many=True))
 
         # deserialization : request
         self.deserialization_request_schema = getattr(
