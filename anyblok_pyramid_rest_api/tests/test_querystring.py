@@ -273,7 +273,7 @@ class TestQueryString(DBTestCase):
         qs.filter_by = [dict(key=key, op=op, value=value)]
         qs.from_filter_by(query)
         self.assertIn("Filter 'badkey': 'badkey' does not exist in model "
-                      "<class 'anyblok.model.system_blok'>.",
+                      "<class 'anyblok.model.ModelSystemBlok'>.",
                       request.errors.messages)
 
     def test_querystring_from_filter_by_with_relationship_bad_key(self):
@@ -288,7 +288,7 @@ class TestQueryString(DBTestCase):
         qs.filter_by = [dict(key=key, op=op, value=value)]
         qs.from_filter_by(query)
         self.assertIn("Filter 'test.badkey': 'badkey' does not exist in model "
-                      "<class 'anyblok.model.test'>.",
+                      "<class 'anyblok.model.ModelTest'>.",
                       request.errors.messages)
 
     def test_querystring_from_order_by_ok(self):
@@ -349,7 +349,7 @@ class TestQueryString(DBTestCase):
         qs.order_by = [dict(key=key, op=op)]
         qs.from_order_by(query)
         self.assertIn("Order 'badkey': 'badkey' does not exist in model "
-                      "<class 'anyblok.model.system_blok'>.",
+                      "<class 'anyblok.model.ModelSystemBlok'>.",
                       request.errors.messages)
 
     def test_querystring_from_order_by_bad_key_relationship(self):
@@ -363,7 +363,7 @@ class TestQueryString(DBTestCase):
         qs.order_by = [dict(key=key, op=op)]
         qs.from_order_by(query)
         self.assertIn("Order 'test.badkey': 'badkey' does not exist in model "
-                      "<class 'anyblok.model.test'>.",
+                      "<class 'anyblok.model.ModelTest'>.",
                       request.errors.messages)
 
     def test_querystring_from_limit(self):
@@ -461,7 +461,8 @@ class TestQueryString(DBTestCase):
             query, model, ['test', 'number'])
         self.assertEqual(
             res,
-            "'number' does not exist in model <class 'anyblok.model.test'>.")
+            "'number' does not exist in model <class 'anyblok.model."
+            "ModelTest'>.")
 
     def test_querystring_get_model_and_key_from_relationship_4(self):
         registry = self.init_registry(None)
@@ -472,6 +473,6 @@ class TestQueryString(DBTestCase):
         res = qs.get_model_and_key_from_relationship(
             query, model, ['model', 'name'])
         self.assertEqual(
-            "'model' in model <class 'anyblok.model.system_column'> is not a "
-            "relationship.",
+            "'model' in model <class 'anyblok.model.ModelSystemColumn'> is not "
+            "a relationship.",
             res)
