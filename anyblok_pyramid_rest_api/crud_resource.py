@@ -2,6 +2,7 @@
 #
 #    Copyright (C) 2017 Franck Bret <franckbret@gmail.com>
 #    Copyright (C) 2017 Jean-Sebastien SUZANNE <jssuzanne@anybox.fr>
+#    Copyright (C) 2018 Jean-Sebastien SUZANNE <jssuzanne@anybox.fr>
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
@@ -15,6 +16,8 @@ from cornice.resource import view as cornice_view
 from anyblok.registry import RegistryManagerException
 from .querystring import QueryString
 from .validator import base_validator
+from pyramid.httpexceptions import HTTPUnauthorized
+from pyramid.security import Deny, Everyone, ALL_PERMISSIONS
 
 
 def get_model(registry, modelname):
@@ -252,7 +255,19 @@ class CrudResource(object):
             raise ValueError(
                 "You must provide a 'model' to use CrudResource class")
 
-    @cornice_view(validators=(base_validator,))
+    def __acl__(self):
+        if not hasattr(self, 'registry'):
+            raise HTTPUnauthorized("ACL have not get AnyBlok registry")
+
+        userid = self.request.authenticated_userid
+        if userid:
+            return self.registry.User.get_acl(
+                userid, self.model, **dict(self.request.matchdict)
+            )
+
+        return [(Deny, Everyone, ALL_PERMISSIONS)]
+
+    @cornice_view(validators=(base_validator,), permission="read")
     def collection_get(self):
         """
         """
@@ -265,7 +280,7 @@ class CrudResource(object):
         else:
             return collection.to_dict()
 
-    @cornice_view(validators=(base_validator,))
+    @cornice_view(validators=(base_validator,), permission="create")
     def collection_post(self):
         """
         """
@@ -278,7 +293,7 @@ class CrudResource(object):
         else:
             return collection.to_dict()
 
-    @cornice_view(validators=(base_validator,))
+    @cornice_view(validators=(base_validator,), permission="read")
     def get(self):
         """
         """
@@ -291,7 +306,7 @@ class CrudResource(object):
         else:
             return item.to_dict()
 
-    @cornice_view(validators=(base_validator,))
+    @cornice_view(validators=(base_validator,), permission="update")
     def put(self):
         """
         """
@@ -305,7 +320,7 @@ class CrudResource(object):
         else:
             return item.to_dict()
 
-    @cornice_view(validators=(base_validator,))
+    @cornice_view(validators=(base_validator,), permission="update")
     def patch(self):
         """
         """
@@ -318,7 +333,7 @@ class CrudResource(object):
         else:
             return item.to_dict()
 
-    @cornice_view(validators=(base_validator,))
+    @cornice_view(validators=(base_validator,), permission="delete")
     def delete(self):
         """
         """

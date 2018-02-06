@@ -2,6 +2,7 @@
 #
 #    Copyright (C) 2017 Franck Bret <franckbret@gmail.com>
 #    Copyright (C) 2017 Jean-Sebastien SUZANNE <jssuzanne@anybox.fr>
+#    Copyright (C) 2018 Jean-Sebastien SUZANNE <jssuzanne@anybox.fr>
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
@@ -329,3 +330,31 @@ class TestCrudResourceModelSchemaValidator(CrudResourceSchema,
         self.registry.upgrade(install=('test_rest_api_5',))
         self.collection_path = '/customers/v5'
         self.path = '/customers/v5/%s'
+
+
+class TestCrudResourceModelSchemaValidatorAndAuth(
+    CrudResourceSchema, PyramidDBTestCase
+):
+    """Test Customers and Addresses from
+    test_bloks/test_5/views.py
+    """
+
+    def setUp(self):
+        super(TestCrudResourceModelSchemaValidatorAndAuth, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_5', 'auth-password'))
+        self.collection_path = '/customers/v5'
+        self.path = '/customers/v5/%s'
+        self.registry.User.insert(
+            login='jssuzanne', first_name='js', last_name='Suzanne')
+        self.registry.User.CredentialStore.insert(
+            login='jssuzanne', password='mypassword')
+        self.webserver.post_json(
+            '/login', {'login': 'jssuzanne', 'password': 'mypassword'},
+            status=302)
+
+    def test_customer_get_logout(self):
+        """Customer GET /customers/{id} [UNLOGGED]"""
+        cu = self.create_customer()
+        self.webserver.post_json('/logout', {}, status=302)
+        self.webserver.get(self.path % cu.id, status=403)
