@@ -17,7 +17,7 @@ from anyblok.registry import RegistryManagerException
 from .querystring import QueryString
 from .validator import base_validator
 from pyramid.httpexceptions import HTTPUnauthorized
-from pyramid.security import Deny, Everyone, ALL_PERMISSIONS
+from pyramid.security import Deny, Allow, Everyone, ALL_PERMISSIONS
 
 
 def get_model(registry, modelname):
@@ -279,6 +279,10 @@ class CrudResource(object):
     def __acl__(self):
         if not hasattr(self, 'registry'):
             raise HTTPUnauthorized("ACL have not get AnyBlok registry")
+
+        Blok = self.registry.System.Blok
+        if not Blok.is_installed('auth'):
+            return [(Allow, Everyone, ALL_PERMISSIONS)]
 
         userid = self.request.authenticated_userid
         if userid:
