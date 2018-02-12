@@ -66,7 +66,7 @@ def get_dschema(request, key='dschema'):
         return None
 
 
-def collection_get(request, modelname):
+def collection_get(request, modelname, collection_get_callback=None):
     """Parse request.params, deserialize it and then build an sqla query
 
     Default behaviour is to search for equal matches where key is a column
@@ -93,6 +93,8 @@ def collection_get(request, modelname):
         # TODO: Implement schema validation to use request.validated
         querystring = QueryString(request, model)
         query = querystring.update_sqlalchemy_query(query)
+        if collection_get_callback:
+            query = collection_get_callback(query)
         # TODO: Advanced pagination with Link Header
         # Link: '<https://api.github.com/user/repos?page=3&per_page=100>;
         # rel="next",
@@ -109,7 +111,7 @@ def collection_get(request, modelname):
         return query.all() if query.count() > 0 else None
 
 
-def collection_post(request, modelname):
+def collection_post(request, modelname, collection_post_callback=None):
     """
     """
     if request.errors:
@@ -118,7 +120,12 @@ def collection_post(request, modelname):
     model = get_model(request.anyblok.registry, modelname)
     if 'body' in request.validated.keys():
         if request.validated.get('body'):
-            item = model.insert(**request.validated['body'])
+            if collection_post_callback:
+                item = collection_post_callback(
+                    model, **request.validated['body']
+                )
+            else:
+                item = model.insert(**request.validated['body'])
         else:
             request.errors.add(
                 'body', '400 bad request',
@@ -127,7 +134,12 @@ def collection_post(request, modelname):
             item = None
     else:
         if request.validated:
-            item = model.insert(**request.validated)
+            if collection_post_callback:
+                item = collection_post_callback(
+                    model, **request.validated
+                )
+            else:
+                item = model.insert(**request.validated)
         else:
             request.errors.add(
                 'body', '400 bad request',
@@ -160,7 +172,7 @@ def get(request, modelname):
         request.errors.status = 404
 
 
-def put(request, modelname):
+def put(request, modelname, put_callback=None):
     """
     """
     if request.errors:
@@ -173,7 +185,10 @@ def put(request, modelname):
     )
 
     if item:
-        item.update(**request.validated['body'])
+        if put_callback:
+            put_callback(item, **request.validated['body'])
+        else:
+            item.update(**request.validated['body'])
         return item
     else:
         path = ', '.join(
@@ -185,7 +200,7 @@ def put(request, modelname):
         request.errors.status = 404
 
 
-def patch(request, modelname):
+def patch(request, modelname, patch_callback=None):
     """
     """
     if request.errors:
@@ -198,7 +213,10 @@ def patch(request, modelname):
     )
 
     if item:
-        item.update(**request.validated['body'])
+        if patch_callback:
+            patch_callback(item, **request.validated['body'])
+        else:
+            item.update(**request.validated['body'])
         return item
     else:
         path = ', '.join(
@@ -210,7 +228,7 @@ def patch(request, modelname):
         request.errors.status = 404
 
 
-def delete(request, modelname):
+def delete(request, modelname, delete_callback=None):
     """
     """
     if request.errors:
@@ -222,7 +240,10 @@ def delete(request, modelname):
         get_path(request)
     )
     if item:
-        item.delete()
+        if delete_callback:
+            delete_callback(item)
+        else:
+            item.delete()
         request.status = 204
     else:
         path = ', '.join(
@@ -267,11 +288,17 @@ class CrudResource(object):
 
         return [(Deny, Everyone, ALL_PERMISSIONS)]
 
+    def collection_get_filter(self, query):
+        """Allow to update the query to add some filter"""
+        return query
+
     @cornice_view(validators=(base_validator,), permission="read")
     def collection_get(self):
         """
         """
-        collection = collection_get(self.request, self.model)
+        collection = collection_get(
+            self.request, self.model,
+            collection_get_callback=self.collection_get_filter)
         if not collection:
             return
         dschema = get_dschema(self.request, key='dschema_collection')
@@ -280,11 +307,15 @@ class CrudResource(object):
         else:
             return collection.to_dict()
 
+    def create(self, Model, **params):
+        return Model.insert(**params)
+
     @cornice_view(validators=(base_validator,), permission="create")
     def collection_post(self):
         """
         """
-        collection = collection_post(self.request, self.model)
+        collection = collection_post(self.request, self.model,
+                                     collection_post_callback=self.create)
         if not collection:
             return
         dschema = get_dschema(self.request)
@@ -306,11 +337,14 @@ class CrudResource(object):
         else:
             return item.to_dict()
 
+    def update(self, item, **params):
+        item.update(**params)
+
     @cornice_view(validators=(base_validator,), permission="update")
     def put(self):
         """
         """
-        item = put(self.request, self.model)
+        item = put(self.request, self.model, put_callback=self.update)
         if not item:
             return
 
@@ -324,7 +358,7 @@ class CrudResource(object):
     def patch(self):
         """
         """
-        item = patch(self.request, self.model)
+        item = patch(self.request, self.model, patch_callback=self.update)
         if not item:
             return
         dschema = get_dschema(self.request)
@@ -333,9 +367,12 @@ class CrudResource(object):
         else:
             return item.to_dict()
 
+    def delete_entry(self, item):
+        item.delete()
+
     @cornice_view(validators=(base_validator,), permission="delete")
     def delete(self):
         """
         """
-        delete(self.request, self.model)
+        delete(self.request, self.model, delete_callback=self.delete_entry)
         return {}
