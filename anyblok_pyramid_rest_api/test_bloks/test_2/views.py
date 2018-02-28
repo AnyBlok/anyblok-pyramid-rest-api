@@ -11,8 +11,8 @@ from anyblok_pyramid_rest_api.crud_resource import CrudResource
 
 
 @resource(
-    collection_path='/bloks',
-    path='/blok/{name}',
+    collection_path='/bloks1',
+    path='/blok1/{name}',
     installed_blok=current_blok()
 )
 class CrudBlok(CrudResource):
