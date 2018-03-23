@@ -121,7 +121,7 @@ class QueryString:
         return query
 
     def update_or_filter(self, model, key, op, value):
-        if ',' not in value:
+        if not value:
             self.request.errors.add(
                 'querystring', '400 Bad Request',
                 'not splitting entries for %r: %r' % (key, value)
@@ -152,7 +152,7 @@ class QueryString:
                 values = value.split(',')
                 return getattr(model, key).in_(values)
             error = 'Filter %r except a comma separated string value' % op
-        elif op.startswith == "or-":
+        elif op.startswith("or-"):
             return self.update_or_filter(model, key, op.split('-')[1], value)
         # elif op == "not":
         #     error = "'%s' filter not implemented yet" % op
