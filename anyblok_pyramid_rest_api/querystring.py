@@ -65,7 +65,7 @@ class QueryString:
                         if mode == 'include':
                             query = _query.filter(condition)
                         elif mode == 'exclude':
-                            query = ~ _query.filter(condition)
+                            query = _query.filter(~condition)
                 else:
                     self.request.errors.add(
                         'querystring',
