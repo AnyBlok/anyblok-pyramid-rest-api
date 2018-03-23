@@ -15,10 +15,10 @@ class TestCrudBlok(PyramidDBTestCase):
 
     def test_predicate(self):
         registry = self.init_registry(None)
-        self.webserver.get('/bloks', status=404)
+        self.webserver.get('/bloks1', status=404)
         self.webserver.get('/bloks2', status=200)
         registry.upgrade(install=('test_rest_api_2',))
-        self.webserver.get('/bloks', status=200)
+        self.webserver.get('/bloks1', status=200)
         self.webserver.get('/bloks2', status=200)
 
     def test_multi_primary_keys(self):

@@ -154,6 +154,9 @@ class ApiSchemaMeta(SchemaMeta):
 
         if deserialization_model_schema:
             for field in opts.request_fields:
+                if field == 'querystring':
+                    continue
+
                 properties[field] = Nested(
                     deserialization_model_schema(
                         **getattr(opts, field + '_opts', {})

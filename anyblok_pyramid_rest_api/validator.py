@@ -11,7 +11,9 @@ from .schema import ApiSchema
 
 
 FILTER_OPERATORS = [
-    'eq', 'like', 'ilike', 'lt', 'lte', 'gt', 'gte', 'in', 'not']
+    'eq', 'like', 'ilike', 'lt', 'lte', 'gt', 'gte',
+    'in', 'or-like', 'or-ilike', 'or-lt', 'or-lte', 'or-gt', 'or-gte'
+]
 ORDER_BY_OPERATORS = ['asc', 'desc']
 
 
@@ -45,11 +47,17 @@ def deserialize_querystring(params=dict()):
             k, v = param
             # TODO  better regex or something?
             if k.startswith("filter["):
-                # Filtering
+                # Filtering (include)
                 # TODO check for errors into string pattern
                 key = k.split("[")[1].split("]")[0]
                 op = k.split("][")[1].split("]")[0]
-                filter_by.append(dict(key=key, op=op, value=v))
+                filter_by.append(dict(key=key, op=op, value=v, mode="include"))
+            elif k.startswith("~filter["):
+                # Filtering (exclude)
+                # TODO check for errors into string pattern
+                key = k.split("[")[1].split("]")[0]
+                op = k.split("][")[1].split("]")[0]
+                filter_by.append(dict(key=key, op=op, value=v, mode="exclude"))
             elif k.startswith("order_by["):
                 # Ordering
                 op = k.split("[")[1].split("]")[0]
