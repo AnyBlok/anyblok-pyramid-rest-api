@@ -67,7 +67,7 @@ class TestQueryString(DBTestCase):
         op = 'eq'
         value = 'anyblok-core'
         qs = QueryString(request, model)
-        Q = qs.update_filter(query, model, key, op, value)
+        Q = query.filter(qs.update_filter(model, key, op, value))
         obj = Q.one()
         self.assertEqual(obj.name, 'anyblok-core')
 
@@ -80,7 +80,7 @@ class TestQueryString(DBTestCase):
         op = 'like'
         value = 'yblok-c'
         qs = QueryString(request, model)
-        Q = qs.update_filter(query, model, key, op, value)
+        Q = query.filter(qs.update_filter(model, key, op, value))
         obj = Q.one()
         self.assertEqual(obj.name, 'anyblok-core')
 
@@ -93,7 +93,7 @@ class TestQueryString(DBTestCase):
         op = 'ilike'
         value = 'yBlOk-c'
         qs = QueryString(request, model)
-        Q = qs.update_filter(query, model, key, op, value)
+        Q = query.filter(qs.update_filter(model, key, op, value))
         obj = Q.one()
         self.assertEqual(obj.name, 'anyblok-core')
 
@@ -106,7 +106,7 @@ class TestQueryString(DBTestCase):
         op = 'lt'
         value = 10
         qs = QueryString(request, model)
-        Q = qs.update_filter(query, model, key, op, value)
+        Q = query.filter(qs.update_filter(model, key, op, value))
         self.assertEqual(len(Q.all()), 0)
         model.insert(number=9)
         self.assertEqual(len(Q.all()), 1)
@@ -124,7 +124,7 @@ class TestQueryString(DBTestCase):
         op = 'lte'
         value = 10
         qs = QueryString(request, model)
-        Q = qs.update_filter(query, model, key, op, value)
+        Q = query.filter(qs.update_filter(model, key, op, value))
         self.assertEqual(len(Q.all()), 0)
         model.insert(number=9)
         self.assertEqual(len(Q.all()), 1)
@@ -142,7 +142,7 @@ class TestQueryString(DBTestCase):
         op = 'gt'
         value = 10
         qs = QueryString(request, model)
-        Q = qs.update_filter(query, model, key, op, value)
+        Q = query.filter(qs.update_filter(model, key, op, value))
         self.assertEqual(len(Q.all()), 0)
         model.insert(number=9)
         self.assertEqual(len(Q.all()), 0)
@@ -160,7 +160,7 @@ class TestQueryString(DBTestCase):
         op = 'gte'
         value = 10
         qs = QueryString(request, model)
-        Q = qs.update_filter(query, model, key, op, value)
+        Q = query.filter(qs.update_filter(model, key, op, value))
         self.assertEqual(len(Q.all()), 0)
         model.insert(number=9)
         self.assertEqual(len(Q.all()), 0)
@@ -178,7 +178,7 @@ class TestQueryString(DBTestCase):
         op = 'in'
         value = 'anyblok-core'
         qs = QueryString(request, model)
-        Q = qs.update_filter(query, model, key, op, value)
+        Q = query.filter(qs.update_filter(model, key, op, value))
         obj = Q.all()
         self.assertEqual(obj.name, ['anyblok-core'])
 
@@ -191,7 +191,7 @@ class TestQueryString(DBTestCase):
         op = 'in'
         value = 'anyblok-core,anyblok-io'
         qs = QueryString(request, model)
-        Q = qs.update_filter(query, model, key, op, value)
+        Q = query.filter(qs.update_filter(model, key, op, value))
         names = Q.all().name
         self.assertEqual(len(names), 2)
         self.assertIn('anyblok-core', names)
@@ -201,12 +201,11 @@ class TestQueryString(DBTestCase):
         registry = self.init_registry(None)
         request = MockRequest(self)
         model = registry.System.Blok
-        query = model.query()
         key = 'name'
         op = 'in'
         value = ''
         qs = QueryString(request, model)
-        qs.update_filter(query, model, key, op, value)
+        qs.update_filter(model, key, op, value)
         self.assertIn("Filter 'in' except a comma separated string value",
                       request.errors.messages)
 

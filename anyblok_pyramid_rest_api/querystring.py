@@ -10,6 +10,7 @@
 from .validator import (
     FILTER_OPERATORS, ORDER_BY_OPERATORS, deserialize_querystring
 )
+from sqlalchemy import or_
 
 
 class QueryString:
@@ -41,6 +42,7 @@ class QueryString:
             op = item.get('op')
             key = item.get('key')
             value = item.get('value')
+            mode = item.get('mode', 'include')
             # Is operator valid?
             if op not in FILTER_OPERATORS:
                 self.request.errors.add(
@@ -58,7 +60,12 @@ class QueryString:
                     query, self.Model, key.split('.'))
                 if isinstance(res, tuple):
                     _query, _model, _key = res
-                    query = self.update_filter(_query, _model, _key, op, value)
+                    condition = self.update_filter(_model, _key, op, value)
+                    if condition is not None:
+                        if mode == 'include':
+                            query = _query.filter(condition)
+                        elif mode == 'exclude':
+                            query = ~ _query.filter(condition)
                 else:
                     self.request.errors.add(
                         'querystring',
@@ -113,27 +120,40 @@ class QueryString:
 
         return query
 
-    def update_filter(self, query, model, key, op, value):
+    def update_or_filter(self, model, key, op, value):
+        if ',' not in value:
+            self.request.errors.add(
+                'querystring', '400 Bad Request',
+                'not splitting entries for %r: %r' % (key, value)
+            )
+            self.request.errors.status = 400
+            return
+        return or_(*[
+            self.update_filter(model, key, op, v.strip())
+            for v in value.split(',')
+        ])
+
+    def update_filter(self, model, key, op, value):
         if op == "eq":
-            return query.filter(getattr(model, key) == value)
-        elif op == "like":
-            return query.filter(getattr(model, key).like("%" + value + "%"))
-        elif op == "ilike":
-            return query.filter(getattr(model, key).ilike("%" + value + "%"))
+            return getattr(model, key) == value
+        elif op in ("like", "ilike"):
+            return getattr(getattr(model, key), op)("%" + value + "%")
         elif op == "lt":
-            return query.filter(getattr(model, key) < value)
+            return getattr(model, key) < value
         elif op == "lte":
-            return query.filter(getattr(model, key) <= value)
+            return getattr(model, key) <= value
         elif op == "gt":
-            return query.filter(getattr(model, key) > value)
+            return getattr(model, key) > value
         elif op == "gte":
-            return query.filter(getattr(model, key) >= value)
+            return getattr(model, key) >= value
         elif op == "in":
             # ensure we have a comma separated value string...
             if value:
                 values = value.split(',')
-                return query.filter(getattr(model, key).in_(values))
+                return getattr(model, key).in_(values)
             error = 'Filter %r except a comma separated string value' % op
+        elif op.startswith == "or-":
+            return self.update_or_filter(model, key, op.split('-')[1], value)
         # elif op == "not":
         #     error = "'%s' filter not implemented yet" % op
 
