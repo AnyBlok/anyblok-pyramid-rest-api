@@ -122,7 +122,7 @@ def collection_post(request, modelname, collection_post_callback=None):
         if request.validated.get('body'):
             if collection_post_callback:
                 item = collection_post_callback(
-                    model, **request.validated['body']
+                    model, params=request.validated['body']
                 )
             else:
                 item = model.insert(**request.validated['body'])
@@ -136,7 +136,7 @@ def collection_post(request, modelname, collection_post_callback=None):
         if request.validated:
             if collection_post_callback:
                 item = collection_post_callback(
-                    model, **request.validated
+                    model, params=request.validated
                 )
             else:
                 item = model.insert(**request.validated)
@@ -186,7 +186,7 @@ def put(request, modelname, put_callback=None):
 
     if item:
         if put_callback:
-            put_callback(item, **request.validated['body'])
+            put_callback(item, params=request.validated['body'])
         else:
             item.update(**request.validated['body'])
         return item
@@ -214,7 +214,7 @@ def patch(request, modelname, patch_callback=None):
 
     if item:
         if patch_callback:
-            patch_callback(item, **request.validated['body'])
+            patch_callback(item, params=request.validated['body'])
         else:
             item.update(**request.validated['body'])
         return item
@@ -311,7 +311,10 @@ class CrudResource(object):
         else:
             return collection.to_dict()
 
-    def create(self, Model, **params):
+    def create(self, Model, params=None):
+        if params is None:
+            params = {}
+
         return Model.insert(**params)
 
     @cornice_view(validators=(base_validator,), permission="create")
@@ -341,7 +344,10 @@ class CrudResource(object):
         else:
             return item.to_dict()
 
-    def update(self, item, **params):
+    def update(self, item, params=None):
+        if params is None:
+            return item
+
         item.update(**params)
 
     @cornice_view(validators=(base_validator,), permission="update")
