@@ -287,7 +287,7 @@ class CrudResource(object):
         userid = self.request.authenticated_userid
         if userid:
             return self.registry.User.get_acl(
-                userid, self.model, **dict(self.request.matchdict)
+                userid, self.model, params=dict(self.request.matchdict)
             )
 
         return [(Deny, Everyone, ALL_PERMISSIONS)]
