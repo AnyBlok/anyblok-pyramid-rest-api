@@ -65,7 +65,7 @@ class QueryString:
                         if mode == 'include':
                             query = _query.filter(condition)
                         elif mode == 'exclude':
-                            query = ~ _query.filter(condition)
+                            query = _query.filter(~condition)
                 else:
                     self.request.errors.add(
                         'querystring',
@@ -121,7 +121,7 @@ class QueryString:
         return query
 
     def update_or_filter(self, model, key, op, value):
-        if ',' not in value:
+        if not value:
             self.request.errors.add(
                 'querystring', '400 Bad Request',
                 'not splitting entries for %r: %r' % (key, value)
@@ -152,10 +152,8 @@ class QueryString:
                 values = value.split(',')
                 return getattr(model, key).in_(values)
             error = 'Filter %r except a comma separated string value' % op
-        elif op.startswith == "or-":
+        elif op.startswith("or-"):
             return self.update_or_filter(model, key, op.split('-')[1], value)
-        # elif op == "not":
-        #     error = "'%s' filter not implemented yet" % op
 
         self.request.errors.add('querystring', '400 Bad Request', error)
         self.request.errors.status = 400
@@ -189,6 +187,6 @@ class QueryString:
             if new_model is None:
                 return '%r in model %s is not a relationship.' % (key, model)
 
-            query = query.join(field)
+            query = query.join(field, aliased=True)
             return self.get_model_and_key_from_relationship(
                 query, new_model, keys[1:])
