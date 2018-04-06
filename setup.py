@@ -30,6 +30,7 @@ requirements = [
     'anyblok_pyramid',
     'cornice',
     'anyblok-marshmallow',
+    'marshmallow_jsonschema',
 ]
 
 test_requirements = [

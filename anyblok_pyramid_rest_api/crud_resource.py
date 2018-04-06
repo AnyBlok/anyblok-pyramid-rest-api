@@ -18,6 +18,71 @@ from .querystring import QueryString
 from .validator import base_validator
 from pyramid.httpexceptions import HTTPUnauthorized
 from pyramid.security import Deny, Allow, Everyone, ALL_PERMISSIONS
+from json import dumps
+from marshmallow_jsonschema import JSONSchema
+from anyblok_marshmallow import ModelSchema, Nested
+from marshmallow.compat import basestring
+from marshmallow.class_registry import get_class
+
+
+class AnyBlokJSONSchema(JSONSchema):
+
+    def _get_default_mapping(self, obj):
+        mapping = super(AnyBlokJSONSchema, self)._get_default_mapping(obj)
+        mapping.update({
+            Nested: '_from_nested_schema',
+        })
+        return mapping
+
+    def _from_nested_schema(self, obj, field):
+        """Support nested field."""
+        if isinstance(field.nested, basestring):
+            nested = get_class(field.nested)
+        elif isinstance(field.schema, ModelSchema):
+            nested = Nested(field.schema.schema.__class__).nested
+            nested.__name__ = field.nested.__name__
+        else:
+            nested = field.nested
+
+        name = nested.__name__
+        outer_name = obj.__class__.__name__
+        only = field.only
+        exclude = field.exclude
+
+        # If this is not a schema we've seen, and it's not this schema,
+        # put it in our list of schema defs
+        if name not in self._nested_schema_classes and name != outer_name:
+            wrapped_nested = AnyBlokJSONSchema(nested=True)
+            wrapped_dumped = wrapped_nested.dump(
+                nested(only=only, exclude=exclude)
+            )
+            self._nested_schema_classes[name] = wrapped_dumped.data
+            self._nested_schema_classes.update(
+                wrapped_nested._nested_schema_classes
+            )
+
+        # and the schema is just a reference to the def
+        schema = {
+            'type': 'object',
+            '$ref': '#/definitions/{}'.format(name)
+        }
+
+        # NOTE: doubled up to maintain backwards compatibility
+        metadata = field.metadata.get('metadata', {})
+        metadata.update(field.metadata)
+
+        for md_key, md_val in metadata.items():
+            if md_key == 'metadata':
+                continue
+            schema[md_key] = md_val
+
+        if field.many:
+            schema = {
+                'type': ["array"] if field.required else ['array', 'null'],
+                'items': schema,
+            }
+
+        return schema
 
 
 def get_model(registry, modelname):
@@ -287,7 +352,7 @@ class CrudResource(object):
         userid = self.request.authenticated_userid
         if userid:
             return self.registry.User.get_acl(
-                userid, self.model, **dict(self.request.matchdict)
+                userid, self.model, params=dict(self.request.matchdict)
             )
 
         return [(Deny, Everyone, ALL_PERMISSIONS)]
@@ -307,7 +372,14 @@ class CrudResource(object):
             return
         dschema = get_dschema(self.request, key='dschema_collection')
         if dschema:
-            return dschema.dump(collection, registry=self.registry).data
+            headers = self.request.response.headers
+            json_schema = AnyBlokJSONSchema()
+            dschema.context['registry'] = self.registry
+            sch = dschema.schema if isinstance(dschema, ModelSchema) else dschema
+            headers['X-Json-Schema'] = dumps(json_schema.dump(sch).data)
+            from pprint import pprint
+            pprint(json_schema.dump(sch).data)
+            return dschema.dump(collection).data
         else:
             return collection.to_dict()
 
