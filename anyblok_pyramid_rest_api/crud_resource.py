@@ -54,7 +54,7 @@ class AnyBlokJSONSchema(JSONSchema):
         if name not in self._nested_schema_classes and name != outer_name:
             wrapped_nested = AnyBlokJSONSchema(nested=True)
             wrapped_dumped = wrapped_nested.dump(
-                nested(only=only, exclude=exclude)
+                nested(only=only, exclude=exclude, context=field.schema.context)
             )
             self._nested_schema_classes[name] = wrapped_dumped.data
             self._nested_schema_classes.update(
