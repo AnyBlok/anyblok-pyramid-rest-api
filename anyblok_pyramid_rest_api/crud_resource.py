@@ -320,6 +320,13 @@ def delete(request, modelname, delete_callback=None):
         request.errors.status = 404
 
 
+def getJsonSchema(request, schema):
+    headers = request.response.headers
+    json_schema = AnyBlokJSONSchema()
+    schema = schema.schema if isinstance(schema, ModelSchema) else schema
+    headers['X-Json-Schema'] = dumps(json_schema.dump(schema).data)
+
+
 class CrudResource(object):
     """ A class that add to cornice resource CRUD abilities on Anyblok models.
 
@@ -372,13 +379,8 @@ class CrudResource(object):
             return
         dschema = get_dschema(self.request, key='dschema_collection')
         if dschema:
-            headers = self.request.response.headers
-            json_schema = AnyBlokJSONSchema()
             dschema.context['registry'] = self.registry
-            sch = dschema.schema if isinstance(dschema, ModelSchema) else dschema
-            headers['X-Json-Schema'] = dumps(json_schema.dump(sch).data)
-            from pprint import pprint
-            pprint(json_schema.dump(sch).data)
+            getJsonSchema(self.request, dschema)
             return dschema.dump(collection).data
         else:
             return collection.to_dict()
@@ -412,13 +414,8 @@ class CrudResource(object):
             return
         dschema = get_dschema(self.request)
         if dschema:
-            headers = self.request.response.headers
-            json_schema = AnyBlokJSONSchema()
             dschema.context['registry'] = self.registry
-            sch = dschema.schema if isinstance(dschema, ModelSchema) else dschema
-            headers['X-Json-Schema'] = dumps(json_schema.dump(sch).data)
-            from pprint import pprint
-            pprint(json_schema.dump(sch).data)
+            getJsonSchema(self.request, dschema)
             return dschema.dump(item).data
         else:
             return item.to_dict()
