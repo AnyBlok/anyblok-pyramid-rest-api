@@ -412,7 +412,14 @@ class CrudResource(object):
             return
         dschema = get_dschema(self.request)
         if dschema:
-            return dschema.dump(item, registry=self.registry).data
+            headers = self.request.response.headers
+            json_schema = AnyBlokJSONSchema()
+            dschema.context['registry'] = self.registry
+            sch = dschema.schema if isinstance(dschema, ModelSchema) else dschema
+            headers['X-Json-Schema'] = dumps(json_schema.dump(sch).data)
+            from pprint import pprint
+            pprint(json_schema.dump(sch).data)
+            return dschema.dump(item).data
         else:
             return item.to_dict()
 
