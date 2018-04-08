@@ -265,6 +265,7 @@ class CrudResourceSchema:
     def test_customer_put(self):
         """Customer PUT /customers/{id}"""
         ex = self.create_customer()
+        response = self.webserver.head(self.path % ex.id)  # fix headers
         response = self.webserver.put_json(
             self.path % ex.id, {'name': 'bobby'})
         self.assertEqual(response.status_code, 200)
