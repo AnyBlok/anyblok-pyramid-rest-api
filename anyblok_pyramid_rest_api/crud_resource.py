@@ -20,10 +20,11 @@ from pyramid.httpexceptions import HTTPUnauthorized
 from pyramid.security import Deny, Allow, Everyone, ALL_PERMISSIONS
 from json import dumps
 from marshmallow_jsonschema import JSONSchema
-from anyblok_marshmallow import ModelSchema, Nested
+from anyblok_marshmallow import ModelSchema, Nested, Text
 from marshmallow.compat import basestring
 from marshmallow.class_registry import get_class
 from marshmallow.decorators import post_dump
+from marshmallow import missing
 
 
 class AnyBlokJSONSchema(JSONSchema):
@@ -32,6 +33,7 @@ class AnyBlokJSONSchema(JSONSchema):
         mapping = super(AnyBlokJSONSchema, self)._get_default_mapping(obj)
         mapping.update({
             Nested: '_from_nested_schema',
+            Text: '_from_text_schema',
         })
         return mapping
 
@@ -84,6 +86,31 @@ class AnyBlokJSONSchema(JSONSchema):
             }
 
         return schema
+
+    def _from_text_schema(self, obj, field):
+        json_schema = {
+            'title': field.attribute or field.name,
+            'type': 'string',
+            'attrs': {
+                'type': 'textarea',
+            },
+        }
+        if field.dump_only:
+            json_schema['readonly'] = True
+
+        if field.default is not missing:
+            json_schema['default'] = field.default
+
+        # NOTE: doubled up to maintain backwards compatibility
+        metadata = field.metadata.get('metadata', {})
+        metadata.update(field.metadata)
+
+        for md_key, md_val in metadata.items():
+            if md_key == 'metadata':
+                continue
+            json_schema[md_key] = md_val
+
+        return json_schema
 
     @post_dump(pass_many=False)
     def wrap(self, data):
