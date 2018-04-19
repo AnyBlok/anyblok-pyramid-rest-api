@@ -23,6 +23,7 @@ from marshmallow_jsonschema import JSONSchema
 from anyblok_marshmallow import ModelSchema, Nested
 from marshmallow.compat import basestring
 from marshmallow.class_registry import get_class
+from marshmallow.decorators import post_dump
 
 
 class AnyBlokJSONSchema(JSONSchema):
@@ -54,7 +55,7 @@ class AnyBlokJSONSchema(JSONSchema):
         if name not in self._nested_schema_classes and name != outer_name:
             wrapped_nested = AnyBlokJSONSchema(nested=True)
             wrapped_dumped = wrapped_nested.dump(
-                nested(only=only, exclude=exclude, context=field.schema.context)
+                nested(only=only, exclude=exclude)
             )
             self._nested_schema_classes[name] = wrapped_dumped.data
             self._nested_schema_classes.update(
@@ -83,6 +84,16 @@ class AnyBlokJSONSchema(JSONSchema):
             }
 
         return schema
+
+    @post_dump(pass_many=False)
+    def wrap(self, data):
+        if not self.nested:
+            data.update({
+                'definitions': self._nested_schema_classes,
+                '$id': self.obj.__class__.__name__,
+            })
+
+        return data
 
 
 def get_model(registry, modelname):
