@@ -19,27 +19,28 @@ class SchemaBase:
         """
         """
         body = {'body': {'name': 'bob', 'tags': [{'id': 1, 'name': 'awesome'}]}}
-        data, error = self.customer_schema.load({'collection_post': body})
-        self.assertEqual(len(error), 0)
-        self.assertEqual(len(data['collection_post'].keys()), 1)
+
+        data = self.customer_schema.load({'collection_post': body})
         body = data['collection_post']['body']
+
+        self.assertEqual(len(data['collection_post'].keys()), 1)
         self.assertEqual(body['name'], "bob")
         self.assertEqual(body['tags'], [{'id': 1, 'name': 'awesome'}])
 
     def test_customer_schema_get_load(self):
         """
         """
-        data, error = self.customer_schema.load({'get': {'path': {'id': 1}}})
-        self.assertEqual(len(error), 0)
+        data = self.customer_schema.load({'get': {'path': {'id': 1}}})
+
         self.assertEqual(len(data['get'].keys()), 1)
         self.assertEqual(data['get']['path']['id'], 1)
 
     def test_customer_schema_put_load(self):
         """
         """
-        data, error = self.customer_schema.load(
+        data = self.customer_schema.load(
             {'put': {'path': {'id': 1}, 'body': {'name': 'pop'}}})
-        self.assertEqual(len(error), 0)
+
         self.assertEqual(len(data['put'].keys()), 2)
         self.assertEqual(data['put']['path']['id'], 1)
         self.assertEqual(data['put']['body']['name'], "pop")
@@ -47,8 +48,8 @@ class SchemaBase:
     def test_customer_schema_delete_load(self):
         """
         """
-        data, error = self.customer_schema.load({'delete': {'path': {'id': 1}}})
-        self.assertEqual(len(error), 0)
+        data = self.customer_schema.load({'delete': {'path': {'id': 1}}})
+
         self.assertEqual(len(data['delete'].keys()), 1)
         self.assertEqual(data['delete']['path']['id'], 1)
 
@@ -86,6 +87,6 @@ class TestSimpleApiSchema(DBTestCase):
         schema = BlokApiSchema()
         schema.context['registry'] = registry
         body = {'body': {'name': 'anyblok-core'}}
-        data, error = schema.load({'collection_post': body})
-        self.assertEqual(len(error), 0)
+
+        data = schema.load({'collection_post': body})
         self.assertEqual(len(data['collection_post'].keys()), 1)

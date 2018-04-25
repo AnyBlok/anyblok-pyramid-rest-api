@@ -109,7 +109,7 @@ def thing_service_get(request):
     """
     schema = ThingSchema()
     item = get(request, 'Model.Thing')
-    return schema.dump(item).data
+    return schema.dump(item)
 
 
 @thing_service.put(
@@ -120,7 +120,7 @@ def thing_service_put(request):
     """
     item = put(request, 'Model.Thing')
     schema = ThingSchema()
-    return schema.dump(item).data
+    return schema.dump(item)
 
 
 @thing_service.delete(
@@ -143,7 +143,7 @@ def thing_service_post(request):
     """
     item = collection_post(request, 'Model.Thing')
     schema = ThingSchema()
-    return schema.dump(item).data
+    return schema.dump(item)
 
 
 @thing_collection_service.get(
@@ -155,4 +155,4 @@ def thing_service_get_collection(request):
     """
     schema = ThingSchema(many=True)
     collection = collection_get(request, 'Model.Thing')
-    return schema.dump(collection).data
+    return schema.dump(collection)
