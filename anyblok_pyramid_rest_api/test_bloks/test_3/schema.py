@@ -5,9 +5,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
-from marshmallow import Schema, validates_schema, ValidationError
-
 from anyblok_marshmallow.schema import ModelSchema
+from marshmallow import Schema, validates_schema, ValidationError
 from anyblok_marshmallow.fields import Nested
 from anyblok_pyramid_rest_api.schema import (
     FullRequestSchema,

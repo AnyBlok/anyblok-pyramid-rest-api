@@ -57,9 +57,9 @@ class AnyBlokJSONSchema(JSONSchema):
         if name not in self._nested_schema_classes and name != outer_name:
             wrapped_nested = AnyBlokJSONSchema(nested=True)
             wrapped_dumped = wrapped_nested.dump(
-                nested(only=only, exclude=exclude)
+                nested(only=only, exclude=exclude, context=obj.context)
             )
-            self._nested_schema_classes[name] = wrapped_dumped.data
+            self._nested_schema_classes[name] = wrapped_dumped
             self._nested_schema_classes.update(
                 wrapped_nested._nested_schema_classes
             )
@@ -362,7 +362,7 @@ def getJsonSchema(request, schema):
     headers = request.response.headers
     json_schema = AnyBlokJSONSchema()
     schema = schema.schema if isinstance(schema, ModelSchema) else schema
-    headers['X-Json-Schema'] = dumps(json_schema.dump(schema).data)
+    headers['X-Json-Schema'] = dumps(json_schema.dump(schema))
 
 
 class CrudResource(object):
@@ -419,7 +419,7 @@ class CrudResource(object):
         if dschema:
             dschema.context['registry'] = self.registry
             getJsonSchema(self.request, dschema)
-            return dschema.dump(collection).data
+            return dschema.dump(collection)
         else:
             return collection.to_dict()
 
@@ -439,7 +439,7 @@ class CrudResource(object):
             return
         dschema = get_dschema(self.request)
         if dschema:
-            return dschema.dump(collection, registry=self.registry).data
+            return dschema.dump(collection, registry=self.registry)
         else:
             return collection.to_dict()
 
@@ -454,7 +454,7 @@ class CrudResource(object):
         if dschema:
             dschema.context['registry'] = self.registry
             getJsonSchema(self.request, dschema)
-            return dschema.dump(item).data
+            return dschema.dump(item)
         else:
             return item.to_dict()
 
@@ -474,7 +474,7 @@ class CrudResource(object):
 
         dschema = get_dschema(self.request)
         if dschema:
-            return dschema.dump(item, registry=self.registry).data
+            return dschema.dump(item, registry=self.registry)
         else:
             return item.to_dict()
 
@@ -487,7 +487,7 @@ class CrudResource(object):
             return
         dschema = get_dschema(self.request)
         if dschema:
-            return dschema.dump(item, registry=self.registry).data
+            return dschema.dump(item, registry=self.registry)
         else:
             return item.to_dict()
 

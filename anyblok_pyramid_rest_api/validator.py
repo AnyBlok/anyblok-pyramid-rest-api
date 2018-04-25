@@ -7,6 +7,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 from cornice.validators import extract_cstruct
+from marshmallow import ValidationError
 from .schema import ApiSchema
 
 
@@ -88,15 +89,16 @@ def base_validator(request, schema=None, deserializer=None, **kwargs):
     if schema is None:
         request.validated.update(base)
     else:
-        result, errors = schema.load(base)
-        if errors:
+        try:
+            result = schema.load(base)
+            request.validated.update(result)
+        except ValidationError as err:
+            errors = err.messages
             for k, v in errors.items():
                 request.errors.add(
                     k,
                     'Validation error for %s' % k,
                     ''.join(map('{}.\n'.format, v)))
-        else:
-            request.validated.update(result)
 
 
 def body_validator(request, schema=None, deserializer=None, **kwargs):
@@ -114,15 +116,16 @@ def body_validator(request, schema=None, deserializer=None, **kwargs):
     if request.anyblok:
         schema.context['registry'] = request.anyblok.registry
 
-    result, errors = schema.load(body)
-    if errors:
+    try:
+        result = schema.load(body)
+        request.validated.update(result)
+    except ValidationError as err:
+        errors = err.messages
         for k, v in errors.items():
             request.errors.add(
                 'body',
                 'Validation error for %s' % k,
                 ''.join(map('{}.\n'.format, v)))
-    else:
-        request.validated.update(result)
 
 
 def full_validator(request, schema=None, deserializer=None, **kwargs):
@@ -140,14 +143,15 @@ def full_validator(request, schema=None, deserializer=None, **kwargs):
     if request.anyblok:
         schema.context['registry'] = request.anyblok.registry
 
-    result, errors = schema.load(full)
-    if errors:
+    try:
+        result = schema.load(full)
+        request.validated.update(result)
+    except ValidationError as err:
+        errors = err.messages
         for k, v in errors.items():
             request.errors.add(
                 k, 'Validation error for %s' % k,
                 ''.join(map('{}.\n'.format, v)))
-    else:
-        request.validated.update(result)
 
 
 def model_schema_validator(request, schema=None, deserializer=None, **kwargs):
