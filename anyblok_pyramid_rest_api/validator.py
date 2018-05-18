@@ -85,8 +85,8 @@ def base_validator(request, schema=None, deserializer=None, **kwargs):
         deserializer = extract_cstruct
 
     base = deserializer(request)
-
     if schema is None:
+        del base['body']
         request.validated.update(base)
     else:
         try:
