@@ -30,11 +30,13 @@ class QueryString:
             if self.offset and isinstance(self.offset, str):
                 self.offset = int(self.offset)
 
-    def update_sqlalchemy_query(self, query):
+    def update_sqlalchemy_query(self, query, only_filter=False):
         query = self.from_filter_by(query)
-        query = self.from_order_by(query)
-        query = self.from_limit(query)
-        query = self.from_offset(query)
+        if not only_filter:
+            query = self.from_order_by(query)
+            query = self.from_limit(query)
+            query = self.from_offset(query)
+
         return query
 
     def from_filter_by(self, query):

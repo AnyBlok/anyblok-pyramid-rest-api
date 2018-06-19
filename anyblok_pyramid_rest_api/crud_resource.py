@@ -90,11 +90,12 @@ def collection_get(request, modelname, collection_get_callback=None):
     query = model.query()
 
     headers = request.response.headers
-    headers['X-Total-Records'] = str(query.count())
 
     if request.params:
         # TODO: Implement schema validation to use request.validated
         querystring = QueryString(request, model)
+        total_query = querystring.update_sqlalchemy_query(
+            query, only_filter=True)
         query = querystring.update_sqlalchemy_query(query)
         if collection_get_callback:
             query = collection_get_callback(query)
@@ -104,6 +105,7 @@ def collection_get(request, modelname, collection_get_callback=None):
         # <https://api.github.com/user/repos?page=50&per_page=100>;
         # rel="last"'
         headers['X-Count-Records'] = str(query.count())
+        headers['X-Total-Records'] = str(total_query.count())
         # TODO: Etag / timestamp / 304 if no changes
         # TODO: Cache headers
         return query.all() if query.count() > 0 else None
@@ -111,6 +113,7 @@ def collection_get(request, modelname, collection_get_callback=None):
         # no querystring, returns all records (maybe we will want to apply
         # some default filters values
         headers['X-Count-Records'] = str(query.count())
+        headers['X-Total-Records'] = str(query.count())
         return query.all() if query.count() > 0 else None
 
 
