@@ -19,8 +19,11 @@ from .validator import base_validator
 from pyramid.httpexceptions import HTTPUnauthorized
 from pyramid.security import Deny, Allow, Everyone, ALL_PERMISSIONS
 from json import dumps
-from anyblok_jsonschema import AnyBlokJSONSchema
 from anyblok_marshmallow import ModelSchema
+try:
+    from anyblok_jsonschema import AnyBlokJSONSchema
+except ImportError:
+    AnyBlokJSONSchema = None
 
 
 def get_model(registry, modelname):
@@ -262,10 +265,11 @@ def delete(request, modelname, delete_callback=None):
 
 
 def getJsonSchema(request, schema):
-    headers = request.response.headers
-    json_schema = AnyBlokJSONSchema()
-    schema = schema.schema if isinstance(schema, ModelSchema) else schema
-    headers['X-Json-Schema'] = dumps(json_schema.dump(schema))
+    if AnyBlokJSONSchema:
+        headers = request.response.headers
+        json_schema = AnyBlokJSONSchema()
+        schema = schema.schema if isinstance(schema, ModelSchema) else schema
+        headers['X-Json-Schema'] = dumps(json_schema.dump(schema))
 
 
 class CrudResource(object):
