@@ -15,12 +15,14 @@ from sqlalchemy import or_
 
 class QueryString:
 
-    def __init__(self, request, Model):
+    def __init__(self, request, Model, adapter=None):
         self.request = request
+        self.adapter = adapter
         self.Model = Model
         if request.params:
             parsed_params = deserialize_querystring(request.params)
             self.filter_by = parsed_params.get('filter_by', [])
+            self.tags = parsed_params.get('tags')
             self.order_by = parsed_params.get('order_by', [])
             self.limit = parsed_params.get('limit')
             if self.limit and isinstance(self.limit, str):
@@ -32,6 +34,7 @@ class QueryString:
 
     def update_sqlalchemy_query(self, query, only_filter=False):
         query = self.from_filter_by(query)
+        query = self.from_tags(query)
         if not only_filter:
             query = self.from_order_by(query)
             query = self.from_limit(query)
@@ -57,6 +60,8 @@ class QueryString:
                     '400 Bad Request',
                     "No key filled" % key)
                 self.request.errors.status = 400
+            elif self.has_specific_filter(key, op):
+                query = self.specific_filter(query, key, op, value, mode)
             else:
                 res = self.get_model_and_key_from_relationship(
                     query, self.Model, key.split('.'))
@@ -76,6 +81,46 @@ class QueryString:
                     self.request.errors.status = 400
 
         return query
+
+    def has_specific_filter(self, key, op):
+        if self.adapter is None:
+            return False
+
+        return self.adapter.has_filter_for(key, op)
+
+    def specific_filter(self, query, key, op, value, mode):
+        try:
+            return self.adapter.get_filter_for(key, op)(
+                self, query, op, value, mode)
+        except:
+            self.request.errors.add(
+                'querystring',
+                '400 Bad Request',
+                "Filter %s %s %r" % (key, op, value))
+            self.request.errors.status = 400
+
+    def from_tags(self, query):
+        for tag in self.tags:
+            if self.has_tag(tag):
+                try:
+                    query = self.from_tag(query, tag)
+                except:
+                    self.request.errors.add(
+                        'querystring',
+                        '400 Bad Request',
+                        "Tag %r" % tag)
+                    self.request.errors.status = 400
+
+        return query
+
+    def has_tag(self, tag):
+        if self.adapter is None:
+            return False
+
+        return self.adapter.has_tag_for(tag)
+
+    def from_tag(self, query, tag):
+        return self.adapter.get_tag_for(tag)(self, query)
 
     def from_order_by(self, query):
         for item in self.order_by:

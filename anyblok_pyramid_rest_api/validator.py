@@ -41,6 +41,7 @@ def deserialize_querystring(params=dict()):
     """
     filter_by = []
     order_by = []
+    tags = []
     limit = None
     offset = 0
     if params:
@@ -59,6 +60,10 @@ def deserialize_querystring(params=dict()):
                 key = k.split("[")[1].split("]")[0]
                 op = k.split("][")[1].split("]")[0]
                 filter_by.append(dict(key=key, op=op, value=v, mode="exclude"))
+            elif k == "tag":
+                tags.append(v)
+            elif k == "tags":
+                tags.extend(v.split(','))
             elif k.startswith("order_by["):
                 # Ordering
                 op = k.split("[")[1].split("]")[0]
@@ -74,7 +79,7 @@ def deserialize_querystring(params=dict()):
                 filter_by.append(dict(key=k, op='eq', value=v))
 
     return dict(filter_by=filter_by, order_by=order_by, limit=limit,
-                offset=offset)
+                offset=offset, tags=tags)
 
 
 def base_validator(request, schema=None, deserializer=None, **kwargs):
