@@ -73,6 +73,9 @@ class QueryString:
                             query = _query.filter(condition)
                         elif mode == 'exclude':
                             query = _query.filter(~condition)
+
+                    if '.' in key:
+                        query = query.reset_joinpoint()
                 else:
                     self.request.errors.add(
                         'querystring',
@@ -146,6 +149,9 @@ class QueryString:
                     _query, _model, _key = res
                     query = _query.order_by(
                         getattr(getattr(_model, _key), op)())
+
+                    if '.' in key:
+                        query = query.reset_joinpoint()
                 else:
                     self.request.errors.add(
                         'querystring',
@@ -221,7 +227,8 @@ class QueryString:
 
         return None
 
-    def get_model_and_key_from_relationship(self, query, model, keys):
+    def get_model_and_key_from_relationship(self, query, model, keys,
+                                            already_join=False):
         key = keys[0]
         if key not in model.fields_description():
             return '%r does not exist in model %s.' % (key, model)
@@ -234,6 +241,6 @@ class QueryString:
             if new_model is None:
                 return '%r in model %s is not a relationship.' % (key, model)
 
-            query = query.join(field, aliased=True)
+            query = query.join(field, aliased=True, from_joinpoint=already_join)
             return self.get_model_and_key_from_relationship(
-                query, new_model, keys[1:])
+                query, new_model, keys[1:], already_join=True)
