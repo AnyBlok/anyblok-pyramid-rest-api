@@ -6,68 +6,34 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
-from anyblok_marshmallow.schema import ModelSchema
+from anyblok_marshmallow import SchemaWrapper
 from anyblok_marshmallow.fields import Nested
-from anyblok_pyramid_rest_api.schema import ApiSchema
 
 
-class CitySchema(ModelSchema):
-
-    class Meta:
-        model = 'Model.City'
+class CitySchema(SchemaWrapper):
+    model = 'Model.City'
 
 
-class TagSchema(ModelSchema):
-
-    class Meta:
-        model = 'Model.Tag'
+class TagSchema(SchemaWrapper):
+    model = 'Model.Tag'
 
 
-class AddressSchema(ModelSchema):
+class AddressSchema(SchemaWrapper):
+    model = 'Model.Address'
 
-    # follow the relationship Many2One and One2One
-    city = Nested(CitySchema)
-
-    class Meta:
-        model = 'Model.Address'
-
-
-class AddressApiSchema(ApiSchema):
-
-    class Meta:
-        model = 'Model.Address'
-        request_fields = ('body', 'path')
-        deserialization_model_schema = AddressSchema
-        serialization_model_schema = AddressSchema
+    class Schema:
+        # follow the relationship Many2One and One2One
+        city = Nested(CitySchema)
 
 
-class CustomerSchema(ModelSchema):
+class CustomerSchema(SchemaWrapper):
     """Schema for 'Model.Customer'
     """
+    model = 'Model.Customer'
 
-    # follow the relationship One2Many and Many2Many
-    # - the many=True is required because it is *2Many
-    # - exclude is used to forbid the recurse loop
-    addresses = Nested(AddressSchema, many=True, exclude=('customer', ))
-    tags = Nested(TagSchema, many=True)
-
-    class Meta:
-        model = 'Model.Customer'
-
-
-class CustomerApiSchema(ApiSchema):
-
-    class Meta:
-        model = 'Model.Customer'
-        deserialization_model_schema = CustomerSchema
-        serialization_model_schema = CustomerSchema
-
-
-class BlokApiSchema(ApiSchema):
-
-    class Meta:
-        model = 'Model.System.Blok'
-        dschema_opts = {
-            'only': ['author', 'order', 'name', 'state']}
-        dschema_collection_opts = {
-            'only': ['author', 'order', 'name', 'state']}
+    class Schema:
+        # follow the relationship One2Many and Many2Many
+        # - the many=True is required because it is *2Many
+        # - exclude is used to forbid the recurse loop
+        addresses = Nested(AddressSchema, many=True, exclude=('customer', ))
+        tags = Nested(TagSchema, many=True)

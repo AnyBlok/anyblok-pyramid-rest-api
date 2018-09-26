@@ -95,11 +95,12 @@ class QueryString:
         try:
             return self.adapter.get_filter_for(key, op)(
                 self, query, op, value, mode)
-        except:
+        except Exception as e:
             self.request.errors.add(
                 'querystring',
-                '400 Bad Request',
-                "Filter %s %s %r" % (key, op, value))
+                "Filter %s %s %r" % (key, op, value),
+                str(e)
+            )
             self.request.errors.status = 400
 
     def from_tags(self, query):
@@ -107,11 +108,12 @@ class QueryString:
             if self.has_tag(tag):
                 try:
                     query = self.from_tag(query, tag)
-                except:
+                except Exception as e:
                     self.request.errors.add(
                         'querystring',
-                        '400 Bad Request',
-                        "Tag %r" % tag)
+                        "Tag %r" % tag,
+                        str(e)
+                    )
                     self.request.errors.status = 400
 
         return query

@@ -145,11 +145,25 @@ class TestCrudServiceAdvanced(PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "car")
 
+    def test_thing_service_delete(self):
+        """Example GET /things/{uuid}"""
+        ex = self.create_thing()
+        query = self.registry.Thing.query().filter_by(uuid=ex.uuid)
+        self.assertEqual(query.count(), 1)
+        response = self.webserver.delete('/things/%s' % ex.uuid)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(query.count(), 0)
+
     def test_thing_service_put(self):
         """Example PUT /things/{uuid}"""
         ex = self.create_thing()
+        msg = dict(
+            name='plip',
+            secret='other',
+            example_id=ex.example_id,
+        )
         response = self.webserver.put_json(
-            '/things/%s' % ex.uuid, {'name': 'plip'})
+            '/things/%s' % ex.uuid, msg)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plip")
 
@@ -160,8 +174,8 @@ class TestCrudServiceAdvanced(PyramidDBTestCase):
             '/things/x', {'name': 'plip'}, status=400)
         self.assertEqual(fail.status_code, 400)
         self.assertEqual(fail.json_body.get('status'), 'error')
-        self.assertEqual(
-            fail.json_body.get('errors')[0].get('location'), 'path')
+        self.assertIn(
+            fail.json_body.get('errors')[0].get('location'), ['path', 'body'])
 
     def test_thing_service_put_schema_fail_bad_value_type(self):
         """Example PUT schema validation fail on invalid value type in `body`
@@ -213,12 +227,18 @@ class TestCrudServiceAdvanced(PyramidDBTestCase):
         self.assertEqual(len(response.json_body), 3)
         self.assertEqual(response.json_body[0].get('name'), "car")
 
+    def test_thing_collection_get_unknown_querystring(self):
+        """Thing collection GET /things"""
+        self.create_things()
+        with self.assertRaises(KeyError):
+            self.webserver.get('/things?foo=bar')
+
     def test_thing_collection_get_with_querystring(self):
         """Thing collection GET /things?querystring"""
         self.create_things()
         response = self.webserver.get('/things?filter[name][like]=car')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(int(response.headers.get('X-Total-Records')), 3)
+        self.assertEqual(int(response.headers.get('X-Total-Records')), 1)
         self.assertEqual(int(response.headers.get('X-Count-Records')), 1)
         self.assertEqual(len(response.json_body), 1)
         self.assertEqual(response.json_body[0].get('name'), "car")

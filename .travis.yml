@@ -23,10 +23,16 @@ services:
   - postgresql
 
 install:
+  - pip install -U pip
+  # only eggs: do an erreur with wheel
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.3' ]]; then pip install testfixtures; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.7-dev' ]]; then pip install python_editor texttable PyYAML simplejson; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 'nightly' ]]; then pip install python_editor texttable PyYAML simplejson; fi
+  # only wheel
+  - pip install wheel
   - pip install psycopg2
   - pip install anyblok
-  - pip install anyblok_pyramid
-  - pip install anyblok_marshmallow
+  - pip install marshmallow --pre
   - pip install passlib
   - pip install flake8
   - pip install coverage

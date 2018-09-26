@@ -69,7 +69,7 @@ class TestCrudResourceBase(PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         response = self.webserver.get('/examples')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json_body, None)
+        self.assertEqual(response.json_body, [])
 
     def test_example_delete_bad_value_in_path(self):
         """Example FAILED DELETE /examples/{id}"""
@@ -112,9 +112,21 @@ class TestCrudResourceBase(PyramidDBTestCase):
             self.create_example(name)
         response = self.webserver.get('/examples?filter[name][eq]=air')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(int(response.headers.get('X-Total-Records')), 5)
+        self.assertEqual(int(response.headers.get('X-Total-Records')), 1)
+        self.assertEqual(int(response.headers.get('X-Count-Records')), 1)
         self.assertEqual(len(response.json_body), 1)
         self.assertEqual(response.json_body[0].get('name'), "air")
+
+    def test_example_collection_get_not_filter_eq(self):
+        """Example collection GET /examples?~filter[name][eq]=term"""
+        names = ['air', 'bar', 'car', 'dot', 'zen']
+        for name in names:
+            self.create_example(name)
+        response = self.webserver.get('/examples?~filter[name][eq]=air')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(int(response.headers.get('X-Total-Records')), 4)
+        self.assertEqual(int(response.headers.get('X-Count-Records')), 4)
+        self.assertEqual(len(response.json_body), 4)
 
     def test_example_collection_get_filter_like(self):
         """Example collection GET /examples?filter[name][like]=term"""
@@ -123,7 +135,8 @@ class TestCrudResourceBase(PyramidDBTestCase):
             self.create_example(name)
         response = self.webserver.get('/examples?filter[name][like]=a')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(int(response.headers.get('X-Total-Records')), 5)
+        self.assertEqual(int(response.headers.get('X-Total-Records')), 3)
+        self.assertEqual(int(response.headers.get('X-Count-Records')), 3)
         self.assertEqual(len(response.json_body), 3)
         self.assertEqual(response.json_body[0].get('name'), "air")
 
@@ -134,7 +147,8 @@ class TestCrudResourceBase(PyramidDBTestCase):
             self.create_example(name)
         response = self.webserver.get('/examples?filter[name][ilike]=A')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(int(response.headers.get('X-Total-Records')), 5)
+        self.assertEqual(int(response.headers.get('X-Total-Records')), 3)
+        self.assertEqual(int(response.headers.get('X-Count-Records')), 3)
         self.assertEqual(len(response.json_body), 3)
         self.assertEqual(response.json_body[0].get('name'), "air")
 
@@ -161,7 +175,7 @@ class TestCrudResourceBase(PyramidDBTestCase):
         self.assertEqual(response.json_body[0].get('name'), "dot")
 
 
-class TestCrudResourceBaseValidator(PyramidDBTestCase):
+class TestCrudResourceWithDefaultSchema(PyramidDBTestCase):
     """Test CrudResource class from
     test_bloks/test_1/views.py:ExampleResourceBaseValidator.
 
@@ -172,7 +186,7 @@ class TestCrudResourceBaseValidator(PyramidDBTestCase):
     blok_entry_points = ('bloks', 'test_bloks',)
 
     def setUp(self):
-        super(TestCrudResourceBaseValidator, self).setUp()
+        super(TestCrudResourceWithDefaultSchema, self).setUp()
         self.registry = self.init_registry(None)
         self.registry.upgrade(install=('test_rest_api_1',))
 
@@ -182,31 +196,44 @@ class TestCrudResourceBaseValidator(PyramidDBTestCase):
         return example
 
     def test_example_get(self):
-        """Example GET /basevalidator/examples/{id}"""
+        """Example GET /with/default/schema/examples/{id}"""
         ex = self.create_example()
-        response = self.webserver.get('/basevalidator/examples/%s' % ex.id)
+        response = self.webserver.get(
+            '/with/default/schema/examples/%s' % ex.id)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plop")
 
     def test_example_get_bad_value_in_path(self):
-        """Example FAILED GET /basevalidator/examples/{id}"""
+        """Example FAILED GET /with/default/schema/examples/{id}"""
         self.create_example()
-        fail = self.webserver.get('/basevalidator/examples/0', status=404)
+        fail = self.webserver.get('/with/default/schema/examples/0', status=404)
         self.assertEqual(fail.status_code, 404)
 
 
 class CrudResourceSchema:
     blok_entry_points = ('bloks', 'test_bloks',)
 
-    def create_customer(self, name="bob"):
+    def create_customer(self, name="bob", tag_name="green", zipcode="000"):
         """Create a dummy customer record"""
-        tag = self.registry.Tag.insert(name="green")
+        tag = self.registry.Tag.insert(name=tag_name)
         customer = self.registry.Customer.insert(name=name)
         customer.tags.append(tag)
-        city = self.registry.City.insert(name="nowhere", zipcode="000")
+        city = self.registry.City.insert(name="nowhere", zipcode=zipcode)
         self.registry.Address.insert(
             customer=customer, city=city, street="Dead end street")
         return customer
+
+    def test_example_collection_get(self):
+        """Example collection GET /examples"""
+        self.create_customer()
+        response = self.webserver.get(self.collection_path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "bob")
+        self.assertEqual(len(response.json_body[0].get('addresses')), 1)
+        self.assertEqual(
+            response.json_body[0].get('addresses')[0].get('city').get(
+                'zipcode'), "000")
 
     def test_customer_get(self):
         """Customer GET /customers/{id}"""
@@ -248,7 +275,7 @@ class CrudResourceSchema:
             fail.json_body.get('errors')[0].get('location'), 'body')
         self.assertEqual(
             fail.json_body.get('errors')[0].get('description'),
-            'You can not post an empty body')
+            'Missing data for required field..\n')
 
     def test_customer_collection_post_bad_key_in_body(self):
         """Customer POST bad key in body /customers"""
@@ -271,6 +298,15 @@ class CrudResourceSchema:
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "bobby")
 
+    def test_customer_patch(self):
+        """Customer PATCH /customers/{id}"""
+        ex = self.create_customer()
+        response = self.webserver.head(self.path % ex.id)  # fix headers
+        response = self.webserver.patch_json(
+            self.path % ex.id, {'name': 'bobby'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body.get('name'), "bobby")
+
     def test_customer_put_bad_value_in_path(self):
         """Customer FAILED PUT /customers/{id}"""
         self.create_customer()
@@ -285,7 +321,7 @@ class CrudResourceSchema:
         self.assertEqual(response.status_code, 200)
         response = self.webserver.get(self.collection_path)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json_body, None)
+        self.assertEqual(response.json_body, [])
 
     def test_customer_delete_bad_value_in_path(self):
         """Customer FAILED DELETE /customers/{id}"""
@@ -306,17 +342,66 @@ class TestCrudResourceModelSchema(CrudResourceSchema, PyramidDBTestCase):
         self.path = '/customers/v3/%s'
 
 
-class TestCrudResourceApiSchema(CrudResourceSchema, PyramidDBTestCase):
+class TestCrudResourceWithAdapter(CrudResourceSchema, PyramidDBTestCase):
     """Test Customers and Addresses from
-    test_bloks/test_4/views.py
+    test_bloks/test_3/views.py
     """
 
     def setUp(self):
-        super(TestCrudResourceApiSchema, self).setUp()
+        super(TestCrudResourceWithAdapter, self).setUp()
         self.registry = self.init_registry(None)
         self.registry.upgrade(install=('test_rest_api_4',))
         self.collection_path = '/customers/v4'
         self.path = '/customers/v4/%s'
+
+    def create_adapter_customers(self):
+        self.create_customer()
+        self.create_customer(name="robert", tag_name="orange", zipcode="001")
+
+    def test_adapter_get_all_without_tag_or_custom_filter(self):
+        self.create_adapter_customers()
+        response = self.webserver.get(self.collection_path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 2)
+
+    def test_adapter_tag(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tag=green"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "bob")
+
+    def test_adapter_tags_1(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tags=green"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "bob")
+
+    def test_adapter_tags_2(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tags=green,orange"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 0)
+
+    def test_adapter_tags_3(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tags=orange"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "robert")
+
+    def test_adapter_customer_filter(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?filter[addresses.city][ilike]=001"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "robert")
 
 
 class TestCrudResourceModelSchemaValidator(CrudResourceSchema,

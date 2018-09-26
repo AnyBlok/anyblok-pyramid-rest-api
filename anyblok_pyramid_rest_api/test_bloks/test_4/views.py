@@ -7,51 +7,42 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 from cornice.resource import resource
 from anyblok_pyramid import current_blok
+from anyblok_pyramid_rest_api.crud_resource import CrudResource, Adapter
+from .schema import CustomerSchema
+from sqlalchemy import or_
 
-from anyblok_pyramid_rest_api.crud_resource import (
-    CrudResource
-)
 
-from anyblok_pyramid_rest_api.validator import (
-    full_validator,
-    model_schema_validator
-)
+class CustomerAdapter(Adapter):
 
-from .schema import (
-    CustomerApiSchema,
-    AddressApiSchema,
-    BlokApiSchema
-)
+    @Adapter.filter('addresses.city', ['ilike'])
+    def filter_by_location_and_children(self, querystring, query, operator,
+                                        value, mode):
+        query = query.join(self.registry.Customer.addresses, aliased=True)
+        query = query.join(self.registry.Address.city, aliased=True)
+        query = query.filter(or_(
+            self.registry.City.name.ilike(value),
+            self.registry.City.zipcode.ilike(value)))
+        return query
+
+    @Adapter.tag('green')
+    def tag_is_green(self, querystring, query):
+        query = query.join(self.registry.Customer.tags, aliased=True)
+        query = query.filter(self.registry.Tag.name == 'green')
+        return query
+
+    @Adapter.tag('orange')
+    def tag_is_orange(self, querystring, query):
+        query = query.join(self.registry.Customer.tags, aliased=True)
+        query = query.filter(self.registry.Tag.name == 'orange')
+        return query
 
 
 @resource(
     collection_path='/customers/v4',
     path='/customers/v4/{id}',
-    schema=CustomerApiSchema(),
-    validators=(model_schema_validator,),
     installed_blok=current_blok()
 )
 class CustomerResourceV4(CrudResource):
     model = 'Model.Customer'
-
-
-@resource(
-    collection_path='/addresses/v4',
-    path='/addresses/v4/{id}',
-    schema=AddressApiSchema(),
-    validators=(full_validator,),
-    installed_blok=current_blok()
-)
-class AddressResourceV4(CrudResource):
-    model = 'Model.Address'
-
-
-@resource(
-    collection_path='/bloks/v4',
-    path='/bloks/v4/{name}',
-    schema=BlokApiSchema(),
-    validators=(model_schema_validator,),
-    installed_blok=current_blok()
-)
-class BlokResourceV4(CrudResource):
-    model = 'Model.System.Blok'
+    adapter_cls = CustomerAdapter
+    default_schema = CustomerSchema

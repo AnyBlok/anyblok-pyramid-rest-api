@@ -7,8 +7,10 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 from cornice.validators import extract_cstruct
-from marshmallow import ValidationError
-from .schema import ApiSchema
+from marshmallow import ValidationError, INCLUDE
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
 FILTER_OPERATORS = [
@@ -75,82 +77,27 @@ def deserialize_querystring(params=dict()):
                 # TODO check to allow positive integer only
                 offset = int(v)
             else:
-                # Unknown key, add it as a filter with 'eq' operator
-                filter_by.append(dict(key=k, op='eq', value=v))
+                raise KeyError('Bad querystring : %s=%s' % (k, v))
 
     return dict(filter_by=filter_by, order_by=order_by, limit=limit,
                 offset=offset, tags=tags)
 
 
-def base_validator(request, schema=None, deserializer=None, **kwargs):
-    """ Validate the entire request through cornice.validators.extract_cstruct
-    if no schema provided
-    """
+def base_validator(request, schema, deserializer, only, unknown=INCLUDE):
     if deserializer is None:
         deserializer = extract_cstruct
 
     base = deserializer(request)
     if schema is None:
-        del base['body']
-        request.validated.update(base)
-    else:
-        try:
-            result = schema.load(base)
-            request.validated.update(result)
-        except ValidationError as err:
-            errors = err.messages
-            for k, v in errors.items():
-                request.errors.add(
-                    k,
-                    'Validation error for %s' % k,
-                    ''.join(map('{}.\n'.format, v)))
-
-
-def body_validator(request, schema=None, deserializer=None, **kwargs):
-    """ This validator will add the 'body'content to request.validated
-    if any marshmallow instanciated schema is provided, otherwise it will do
-    nothing.
-    """
-    if deserializer is None:
-        deserializer = extract_cstruct
-
-    if schema is None:
+        request.validated = base
         return
 
-    body = deserializer(request).get('body', {})
-    if request.anyblok:
-        schema.context['registry'] = request.anyblok.registry
+    schema = schema(context={'registry': request.anyblok.registry},
+                    only=only, unknown=unknown)
 
     try:
-        result = schema.load(body)
-        request.validated.update(result)
-    except ValidationError as err:
-        errors = err.messages
-        for k, v in errors.items():
-            request.errors.add(
-                'body',
-                'Validation error for %s' % k,
-                ''.join(map('{}.\n'.format, v)))
-
-
-def full_validator(request, schema=None, deserializer=None, **kwargs):
-    """ This validator will validate the entire request if any schema is provided.
-    Note that in this case the schema should map it's fields to all the fields
-    returned by the deserializer.
-    """
-    if deserializer is None:
-        deserializer = extract_cstruct
-
-    if schema is None:
-        return
-
-    full = deserializer(request)
-    if request.anyblok:
-        schema.context['registry'] = request.anyblok.registry
-
-    try:
-        result = schema.load(full)
-        request.validated.update(result)
+        result = schema.load(base)
+        request.validated = result
     except ValidationError as err:
         errors = err.messages
         for k, v in errors.items():
@@ -159,59 +106,99 @@ def full_validator(request, schema=None, deserializer=None, **kwargs):
                 ''.join(map('{}.\n'.format, v)))
 
 
-def model_schema_validator(request, schema=None, deserializer=None, **kwargs):
-    """
-    """
-    if schema is None:
-        klass = kwargs.get('klass', None)
-        if klass and getattr(klass, 'model', None):
-            metaProperties = {}
-            if hasattr(klass, 'apischema_properties'):
-                klass.apischema_properties(metaProperties)
+def service_collection_get_validator(request, schema=None,
+                                     deserializer=None, **kwargs):
+    base_validator(request, schema, deserializer, only=['querystring'])
 
-            metaProperties.update({'model': klass.model})
-            if getattr(klass, 'schema_defined_by', None):
-                if request.anyblok:
-                    registry = request.anyblok.registry
-                    Model = registry.get(klass.model)
-                    schema = getattr(Model, klass.schema_defined_by)(
-                        request=request, klass=klass,
-                        metaProperties=metaProperties
-                    )
-                else:
-                    # raise error we must have a schema
-                    raise TypeError(
-                        "No AnyBlok registry to define schema "
-                        "`model_schema_validator`")
 
-            else:
-                schema = type(
-                    'Api.Schema.%s' % klass.model,
-                    (ApiSchema,),
-                    {'Meta': type('Meta', tuple(), metaProperties)}
-                )()
+def service_post_validator(request, schema=None, deserializer=None, **kwargs):
+    base_validator(request, schema, deserializer, only=['body'])
 
-            # put the build schema in the request because the crud_resource
-            # need a dschema and dschema_collection, it is the only way
-            request.current_service.schema = schema
-        else:
-            # raise error we must have a schema
-            raise TypeError(
-                "You must provide a schema to your view when using "
-                "`model_schema_validator`")
 
+def service_get_validator(request, schema=None, deserializer=None, **kwargs):
+    base_validator(request, schema, deserializer, only=['path'])
+
+
+def service_put_validator(request, schema=None, deserializer=None, **kwargs):
+    base_validator(request, schema, deserializer, only=['path', 'body'])
+
+
+service_patch_validator = service_put_validator
+
+
+def service_delete_validator(request, schema=None, deserializer=None, **kwargs):
+    base_validator(request, schema, deserializer, only=['path'])
+
+
+def collection_get_validator(request, deserializer=None, klass=None, **kwargs):
     if deserializer is None:
         deserializer = extract_cstruct
 
-    if request.current_service.name.startswith("collection"):
-        action = "collection_%s" % request.method.lower()
-    else:
-        action = request.method.lower()
+    deserializer(request)
+    # I don't know how validate the query string
 
-    if action in schema.fields.keys() and schema.fields.get(action).nested:
-        schema = schema.fields.get(action).nested
 
-    return full_validator(request,
-                          schema=schema,
-                          deserializer=deserializer,
-                          **kwargs)
+def collection_post_validator(request, deserializer=None, klass=None, **kwargs):
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    base = deserializer(request)
+    # validate the body
+    model_name = klass.get_model_name(request, base)
+    Schema = klass.get_deserialize_schema('collection_post', model_name)
+    opts = klass.get_deserialize_opts('collection_post')
+    klass.apply_validator_schema(request, 'body', Schema, opts, base)
+
+
+def get_validator(request, deserializer=None, klass=None, **kwargs):
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    base = deserializer(request)
+    # validate the path
+    Schema = klass.get_path_schema('get')
+    opts = klass.get_path_opts('get')
+    klass.apply_validator_schema(request, 'path', Schema, opts, base)
+
+
+def delete_validator(request, deserializer=None, klass=None, **kwargs):
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    base = deserializer(request)
+    # validate the path
+    Schema = klass.get_path_schema('get')
+    opts = klass.get_path_opts('get')
+    klass.apply_validator_schema(request, 'path', Schema, opts, base)
+
+
+def patch_validator(request, deserializer=None, klass=None, **kwargs):
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    base = deserializer(request)
+    # validate the path
+    Schema = klass.get_path_schema('patch')
+    opts = klass.get_path_opts('patch')
+    klass.apply_validator_schema(request, 'path', Schema, opts, base)
+    # validate the body
+    model_name = klass.get_model_name(request, base)
+    Schema = klass.get_deserialize_schema('patch', model_name)
+    opts = klass.get_deserialize_opts('patch')
+    klass.apply_validator_schema(request, 'body', Schema, opts, base)
+
+
+def put_validator(request, deserializer=None, klass=None, **kwargs):
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    base = deserializer(request)
+    # validate the path
+    Schema = klass.get_path_schema('put')
+    opts = klass.get_path_opts('put')
+    klass.apply_validator_schema(request, 'path', Schema, opts, base)
+    # validate the body
+    model_name = klass.get_model_name(request, base)
+    Schema = klass.get_deserialize_schema('put', model_name)
+    opts = klass.get_deserialize_opts('put')
+    klass.apply_validator_schema(request, 'body', Schema, opts, base)

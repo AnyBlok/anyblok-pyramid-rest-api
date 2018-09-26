@@ -7,41 +7,39 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 from cornice import Service
 from cornice.resource import resource
-
+from anyblok_pyramid import current_blok
+from anyblok_pyramid_rest_api.validator import (
+    service_collection_get_validator,
+    service_post_validator,
+    service_get_validator,
+    service_put_validator,
+    service_delete_validator,
+)
 from anyblok_pyramid_rest_api.crud_resource import (
     CrudResource,
-    collection_get,
-    collection_post,
-    get,
-    put,
-    delete
+    get_items,
+    post_item,
+    get_item,
+    put_item,
+    delete_item,
 )
-from anyblok_pyramid_rest_api.validator import (
-    body_validator,
-    full_validator
-)
-from .schema import (
-    ExampleSchema,
-    AnotherSchema,
-    ThingSchema,
-    ThingRequestSchema
-)
+from .schema import (ExampleSchema, ExamplePathSchema, ThingSchema,
+                     ThingRequestSchema, AnotherSchema)
 
 
-@resource(collection_path='/examples', path='/examples/{id}')
+@resource(collection_path='/examples', path='/examples/{id}',
+          installed_blok=current_blok())
 class ExampleResource(CrudResource):
-    """CrudResource basic example. No validator, no schema
-    """
     model = 'Model.Example'
 
 
-@resource(collection_path='/basevalidator/examples',
-          path='/basevalidator/examples/{id}',
-          validators=(full_validator,))
-class ExampleResourceBaseValidator(CrudResource):
-    """CrudResource basic example with base validator
-    """
+@resource(collection_path='/with/default/schema/examples',
+          path='/with/default/schema/examples/{id}',
+          installed_blok=current_blok())
+class ExampleResourceWithDefaultSchema(CrudResource):
     model = 'Model.Example'
+    default_schema = ExampleSchema
+    default_path_schema = ExamplePathSchema
 
 
 # another endpoint through a service with the same model
@@ -64,22 +62,19 @@ def another_service_get(request):
     return item.to_dict()
 
 
-@another_service.put(
-    validators=(full_validator,),
-    schema=AnotherSchema())
+@another_service.put(validators=(service_put_validator,), schema=AnotherSchema)
 def another_service_put(request):
     """ full_validator + AnotherSchema
     """
     registry = request.anyblok.registry
-    model = registry.get('Model.Example')
-    item = model.query().get(request.validated.get('path').get('id'))
+    Model = registry.get('Model.Example')
+    item = Model.query().get(request.validated.get('path').get('id'))
     item.update(**request.validated.get('body'))
     return item.to_dict()
 
 
-@another_collection_service.post(
-    validators=(body_validator,),
-    schema=ExampleSchema(partial=('id',)))
+@another_collection_service.post(validators=(service_post_validator,),
+                                 schema=AnotherSchema)
 def another_service_post(request):
     """ body_validator + schema
     As it is a POST, exclude 'id' from validation with the `partial` arg
@@ -87,7 +82,7 @@ def another_service_post(request):
     """
     registry = request.anyblok.registry
     model = registry.get('Model.Example')
-    item = model.insert(**request.validated)
+    item = model.insert(**request.validated['body'])
     return item.to_dict()
 
 
@@ -100,59 +95,54 @@ thing_collection_service = Service(
     path='/things')
 
 
-@thing_service.get(
-    validators=(full_validator,),
-    schema=ThingRequestSchema(only=('path',)))
+@thing_service.get(validators=(service_get_validator,),
+                   schema=ThingRequestSchema)
 def thing_service_get(request):
     """ Use Full validator with a request schema but Validate
     only the path
     """
     schema = ThingSchema()
-    item = get(request, 'Model.Thing')
+    item = get_item(request, 'Model.Thing')
     return schema.dump(item)
 
 
-@thing_service.put(
-    validators=(full_validator,),
-    schema=ThingRequestSchema(only=('path', 'body')))
+@thing_service.put(validators=(service_put_validator,),
+                   schema=ThingRequestSchema)
 def thing_service_put(request):
     """ full_validator + RequestSchema
     """
-    item = put(request, 'Model.Thing')
+    item = put_item(request, 'Model.Thing')
     schema = ThingSchema()
     return schema.dump(item)
 
 
-@thing_service.delete(
-    validators=(full_validator,),
-    schema=ThingRequestSchema(only=('path',)))
+@thing_service.delete(validators=(service_delete_validator,),
+                      schema=ThingRequestSchema)
 def thing_service_delete(request):
     """ full_validator + AnotherSchema
     """
-    item = delete(request, 'Model.Thing')
+    item = delete_item(request, 'Model.Thing')
     return item
 
 
-@thing_collection_service.post(
-    validators=(body_validator,),
-    schema=ThingSchema(exclude=('uuid',)))
+@thing_collection_service.post(validators=(service_post_validator,),
+                               schema=ThingRequestSchema)
 def thing_service_post(request):
     """ body_validator + schema
     As it is a POST, exclude 'id' from validation with the `partial` arg
     on schema instantiation
     """
-    item = collection_post(request, 'Model.Thing')
+    item = post_item(request, 'Model.Thing')
     schema = ThingSchema()
     return schema.dump(item)
 
 
-@thing_collection_service.get(
-    validators=(full_validator,),
-    schema=ThingRequestSchema(only=('querystring')))
+@thing_collection_service.get(validators=(service_collection_get_validator,),
+                              schema=ThingRequestSchema)
 def thing_service_get_collection(request):
     """ full_validator + querystring schema validation + schema validation
     for response data
     """
     schema = ThingSchema(many=True)
-    collection = collection_get(request, 'Model.Thing')
+    collection = get_items(request, 'Model.Thing')
     return schema.dump(collection)

@@ -2,3 +2,4 @@
 ipdb
 ipdbplugin
 ipython
+pysqlite3

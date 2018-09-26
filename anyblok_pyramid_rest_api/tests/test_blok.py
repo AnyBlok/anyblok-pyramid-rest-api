@@ -42,7 +42,8 @@ class TestCrudBlok(PyramidDBTestCase):
         })
 
     def test_bad_model(self):
-        self.init_registry(None)
+        registry = self.init_registry(None)
+        registry.upgrade(install=('test_rest_api_2',))
         with self.assertRaises(RegistryManagerException):
             self.webserver.get('/bad/model')
 
@@ -64,19 +65,6 @@ class CrudResourceBlok:
                 'state': 'installed',
             }
         )
-
-
-class TestCrudResourceBlokApiSchema(CrudResourceBlok, PyramidDBTestCase):
-    """Test Customers and Addresses from
-    test_bloks/test_4/views.py
-    """
-
-    def setUp(self):
-        super(TestCrudResourceBlokApiSchema, self).setUp()
-        self.registry = self.init_registry(None)
-        self.registry.upgrade(install=('test_rest_api_4',))
-        self.collection_path = '/bloks/v4'
-        self.path = '/bloks/v4/%s'
 
 
 class TestCrudResourceBlokModelSchemaValidator(CrudResourceBlok,

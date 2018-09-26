@@ -6,10 +6,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 from marshmallow import Schema, fields
-
-from anyblok_pyramid_rest_api.schema import (
-    FullRequestSchema,
-)
+from anyblok_pyramid_rest_api.schema import FullRequestSchema
 
 
 class ExampleSchema(Schema):
@@ -20,11 +17,11 @@ class ExampleSchema(Schema):
     name = fields.Str(required=True)
 
 
-class AnotherSchema(FullRequestSchema):
-    """This one inherits FullRequestSchema and represents the request model.Example
+class ExamplePathSchema(Schema):
+    """A basic marshmallow schema example
+    This one represents the model.Example fields
     """
-    body = fields.Nested(ExampleSchema(partial=('id',)))
-    path = fields.Nested(ExampleSchema(only=('id',)))
+    id = fields.Int(required=True)
 
 
 class ThingSchema(Schema):
@@ -40,9 +37,16 @@ class ThingSchema(Schema):
 
 
 class ThingRequestSchema(FullRequestSchema):
-    """This one inherits FullRequestSchema and represents the request for Thing
-    model
+    """This one inherits FullRequestSchema and represents the request
+    model.Example
     """
-    body = fields.Nested(ThingSchema(
-        partial=('uuid', 'name', 'secret', 'example_id')))
+    body = fields.Nested(ThingSchema(partial=('uuid',)))
     path = fields.Nested(ThingSchema(only=('uuid',)))
+
+
+class AnotherSchema(FullRequestSchema):
+    """This one inherits FullRequestSchema and represents the request
+    model.Example
+    """
+    body = fields.Nested(ExampleSchema(partial=('id',)))
+    path = fields.Nested(ExampleSchema(only=('id',)))

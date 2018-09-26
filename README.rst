@@ -24,16 +24,15 @@
     :scale: 100%
     :target: https://doc.anyblok-pyramid-rest-api.anyblok.org/en/latest/?badge=latest
 
-========================
 Anyblok Pyramid Rest Api
 ========================
 
-The main idea is to provide facilities for building restful api that interacts with `AnyBlok` models
+The main idea is to provide facilities for building restful api that interacts with AnyBlok_ models
 through a CRUD like pattern.
 
-As dependecy, it use `Cornice` for its validators and schema abilities and `Marshmallow` for
+As dependecy, it use Cornice_ for its validators and schema abilities and Marshmallow_ for
 schema definition, serialization and deserialization (we have since split this work to
-`anyblok_marshmallow`).
+AnyBlok_Marshmallow_).
 
 * Free software: Mozilla Public License Version 2.0
 * Documentation: https://anyblok-pyramid-rest-api.readthedocs.io
@@ -58,13 +57,16 @@ Todo
 Request lifecyle
 ----------------
 
-incoming request 
--> validators -> deserializer (json to dict) -> schema load -> request.validated
-                                                            -> request.errors
-request.validated -> crud -> resulting records
--> deserializer (records to schema dump)
--> serializer (default pyramid / cornice dict to json serializer)
--> response
+incoming request ::
+
+    -> validators -> deserializer (json to dict) -> schema load -> request.validated -> request.errors
+
+request.validated ::
+
+    -> crud -> resulting records
+    -> deserializer (records to schema dump)
+    -> serializer (default pyramid / cornice dict to json serializer)
+    -> response
 
 Author
 ------
@@ -76,7 +78,14 @@ https://github.com/franckbret
 Credits
 -------
 
-.. _`Anyblok`: https://github.com/AnyBlok/AnyBlok
-.. _`Pyramid`: https://getpyramid.com
-.. _`Cornice`: http://cornice.readthedocs.io/
-.. _`Marshmallow`: http://marshmallow.readthedocs.io/
+* Anyblok_
+* Pyramid_
+* Cornice_
+* Marshmallow_
+* AnyBlok_Marshmallow_
+
+.. _Anyblok: https://github.com/AnyBlok/AnyBlok
+.. _Pyramid: https://getpyramid.com
+.. _Cornice: http://cornice.readthedocs.io/
+.. _Marshmallow: http://marshmallow.readthedocs.io/
+.. _AnyBlok_Marshmallow: https://github.com/AnyBlok/AnyBlok_Marshmallow
