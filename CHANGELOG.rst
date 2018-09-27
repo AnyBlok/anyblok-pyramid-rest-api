@@ -4,6 +4,15 @@ Change Log
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+0.2.0
+-----
+
+Added
+~~~~~
+
+* **context** key in querystring. The goal is to add some informations 
+  to help custom filter and tag to build their query
+
 0.1.0 (2018-09-26)
 ------------------
 

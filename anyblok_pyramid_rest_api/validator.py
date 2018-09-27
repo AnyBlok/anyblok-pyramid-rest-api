@@ -20,7 +20,21 @@ FILTER_OPERATORS = [
 ORDER_BY_OPERATORS = ['asc', 'desc']
 
 
-def deserialize_querystring(params=dict()):
+def parse_key_with_two_elements(filter_):
+    # TODO check for errors into string pattern
+    # TODO use regex
+    key = filter_.split("[")[1].split("]")[0]
+    op = filter_.split("][")[1].split("]")[0]
+    return key, op
+
+
+def parse_key_with_one_element(filter_):
+    # TODO check for errors into string pattern
+    # TODO use regex
+    return filter_.split("[")[1].split("]")[0]
+
+
+def deserialize_querystring(params=None):
     """
     Given a querystring parameters dict, returns a new dict that will be used
     to build query filters.
@@ -44,43 +58,43 @@ def deserialize_querystring(params=dict()):
     filter_by = []
     order_by = []
     tags = []
+    context = {}
     limit = None
     offset = 0
-    if params:
-        for param in params.items():
-            k, v = param
-            # TODO  better regex or something?
-            if k.startswith("filter["):
-                # Filtering (include)
-                # TODO check for errors into string pattern
-                key = k.split("[")[1].split("]")[0]
-                op = k.split("][")[1].split("]")[0]
-                filter_by.append(dict(key=key, op=op, value=v, mode="include"))
-            elif k.startswith("~filter["):
-                # Filtering (exclude)
-                # TODO check for errors into string pattern
-                key = k.split("[")[1].split("]")[0]
-                op = k.split("][")[1].split("]")[0]
-                filter_by.append(dict(key=key, op=op, value=v, mode="exclude"))
-            elif k == "tag":
-                tags.append(v)
-            elif k == "tags":
-                tags.extend(v.split(','))
-            elif k.startswith("order_by["):
-                # Ordering
-                op = k.split("[")[1].split("]")[0]
-                order_by.append(dict(key=v, op=op))
-            elif k == 'limit':
-                # TODO check to allow positive integer only if value
-                limit = int(v) if v else None
-            elif k == 'offset':
-                # TODO check to allow positive integer only
-                offset = int(v)
-            else:
-                raise KeyError('Bad querystring : %s=%s' % (k, v))
+    for param in params.items():
+        k, v = param
+        # TODO  better regex or something?
+        if k.startswith("filter["):
+            # Filtering (include)
+            key, op = parse_key_with_two_elements(k)
+            filter_by.append(dict(key=key, op=op, value=v, mode="include"))
+        elif k.startswith("~filter["):
+            # Filtering (exclude)
+            # TODO check for errors into string pattern
+            key, op = parse_key_with_two_elements(k)
+            filter_by.append(dict(key=key, op=op, value=v, mode="exclude"))
+        elif k.startswith("context["):
+            key = parse_key_with_one_element(k)
+            context[key] = v
+        elif k == "tag":
+            tags.append(v)
+        elif k == "tags":
+            tags.extend(v.split(','))
+        elif k.startswith("order_by["):
+            # Ordering
+            op = parse_key_with_one_element(k)
+            order_by.append(dict(key=v, op=op))
+        elif k == 'limit':
+            # TODO check to allow positive integer only if value
+            limit = int(v) if v else None
+        elif k == 'offset':
+            # TODO check to allow positive integer only
+            offset = int(v)
+        else:
+            raise KeyError('Bad querystring : %s=%s' % (k, v))
 
     return dict(filter_by=filter_by, order_by=order_by, limit=limit,
-                offset=offset, tags=tags)
+                offset=offset, tags=tags, context=context)
 
 
 def base_validator(request, schema, deserializer, only, unknown=INCLUDE):

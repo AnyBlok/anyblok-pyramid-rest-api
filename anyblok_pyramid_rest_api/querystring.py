@@ -24,6 +24,7 @@ class QueryString:
             self.filter_by = parsed_params.get('filter_by', [])
             self.tags = parsed_params.get('tags')
             self.order_by = parsed_params.get('order_by', [])
+            self.context = parsed_params.get('context', {})
             self.limit = parsed_params.get('limit')
             if self.limit and isinstance(self.limit, str):
                 self.limit = int(self.limit)
