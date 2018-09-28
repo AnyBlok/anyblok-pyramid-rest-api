@@ -13,6 +13,11 @@ Added
 * **context** key in querystring. The goal is to add some informations 
   to help custom filter and tag to build their query
 
+Refactored
+~~~~~~~~~~
+
+* Now the querystring desarializer use regex to get the informations
+
 0.1.0 (2018-09-26)
 ------------------
 

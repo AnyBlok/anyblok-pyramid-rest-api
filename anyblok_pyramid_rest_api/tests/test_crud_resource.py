@@ -372,6 +372,19 @@ class TestCrudResourceWithAdapter(CrudResourceSchema, PyramidDBTestCase):
         self.assertEqual(len(response.json_body), 1)
         self.assertEqual(response.json_body[0].get('name'), "bob")
 
+    def test_adapter_unexisting_tag(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tag=unexisting"
+        response = self.webserver.get(path, status=400)
+        self.assertEqual(response.status_code, 400)
+
+    def test_adapter_wrong_tag(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tag=wrong"
+        response = self.webserver.get(path, status=400)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(len(response.json_body), 2)
+
     def test_adapter_tags_1(self):
         self.create_adapter_customers()
         path = self.collection_path + "?tags=green"
@@ -395,6 +408,22 @@ class TestCrudResourceWithAdapter(CrudResourceSchema, PyramidDBTestCase):
         self.assertEqual(len(response.json_body), 1)
         self.assertEqual(response.json_body[0].get('name'), "robert")
 
+    def test_adapter_tags_and_context_1(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tag=colors&context[colors]=orange"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "robert")
+
+    def test_adapter_tags_and_context_2(self):
+        self.create_adapter_customers()
+        path = self.collection_path
+        path += "?tag=colors&context[colors]=green,orange"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 2)
+
     def test_adapter_customer_filter(self):
         self.create_adapter_customers()
         path = self.collection_path + "?filter[addresses.city][ilike]=001"
@@ -402,6 +431,13 @@ class TestCrudResourceWithAdapter(CrudResourceSchema, PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json_body), 1)
         self.assertEqual(response.json_body[0].get('name'), "robert")
+
+    def test_adapter_wrong_filter(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?filter[addresses.other][ilike]=001"
+        response = self.webserver.get(path, status=400)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(len(response.json_body), 2)
 
 
 class TestCrudResourceModelSchemaValidator(CrudResourceSchema,

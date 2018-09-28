@@ -9,6 +9,7 @@
 from cornice.validators import extract_cstruct
 from marshmallow import ValidationError, INCLUDE
 from logging import getLogger
+import re
 
 logger = getLogger(__name__)
 
@@ -22,16 +23,14 @@ ORDER_BY_OPERATORS = ['asc', 'desc']
 
 def parse_key_with_two_elements(filter_):
     # TODO check for errors into string pattern
-    # TODO use regex
-    key = filter_.split("[")[1].split("]")[0]
-    op = filter_.split("][")[1].split("]")[0]
-    return key, op
+    pattern = ".*\[(.*)\]\[(.*)\]"
+    return re.match(pattern, filter_).groups()
 
 
 def parse_key_with_one_element(filter_):
     # TODO check for errors into string pattern
-    # TODO use regex
-    return filter_.split("[")[1].split("]")[0]
+    pattern = ".*\[(.*)\]"
+    return re.match(pattern, filter_).groups()[0]
 
 
 def deserialize_querystring(params=None):

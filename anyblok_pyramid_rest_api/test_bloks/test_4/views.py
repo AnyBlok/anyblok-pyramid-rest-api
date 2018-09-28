@@ -37,6 +37,25 @@ class CustomerAdapter(Adapter):
         query = query.filter(self.registry.Tag.name == 'orange')
         return query
 
+    @Adapter.tag('colors')
+    def tag_color_depend_of_context(self, querystring, query):
+        colors = querystring.context.get('colors')
+        if colors:
+            colors = colors.split(',')
+            query = query.join(self.registry.Customer.tags, aliased=True)
+            query = query.filter(self.registry.Tag.name.in_(colors))
+
+        return query
+
+    @Adapter.tag('wrong')
+    def wrong_tag(self, querystring, query):
+        raise Exception('Wrong tags')
+
+    @Adapter.filter('addresses.other', ['ilike'])
+    def wrong_filter(self, querystring, query, operator,
+                     value, mode):
+        raise Exception('Wrong filters')
+
 
 @resource(
     collection_path='/customers/v4',

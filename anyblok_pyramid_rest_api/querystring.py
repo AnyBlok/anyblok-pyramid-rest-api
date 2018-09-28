@@ -104,6 +104,8 @@ class QueryString:
             )
             self.request.errors.status = 400
 
+        return query
+
     def from_tags(self, query):
         for tag in self.tags:
             if self.has_tag(tag):
@@ -116,6 +118,13 @@ class QueryString:
                         str(e)
                     )
                     self.request.errors.status = 400
+            else:
+                self.request.errors.add(
+                    'querystring',
+                    "Tag %r" % tag,
+                    "Unexisting tag"
+                )
+                self.request.errors.status = 400
 
         return query
 
