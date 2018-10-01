@@ -525,3 +525,10 @@ class TestQueryString(DBTestCase):
             "<class 'anyblok.model.factory.ModelSystemColumn'> is not "
             "a relationship.",
             res)
+
+    def test_has_no_tag(self):
+        registry = self.init_registry(None)
+        request = MockRequest(self)
+        model = registry.System.Blok
+        qs = QueryString(request, model)
+        self.assertTrue(qs.has_tag('unknown.tag'))
