@@ -531,4 +531,4 @@ class TestQueryString(DBTestCase):
         request = MockRequest(self)
         model = registry.System.Blok
         qs = QueryString(request, model)
-        self.assertTrue(qs.has_tag('unknown.tag'))
+        self.assertFalse(qs.has_tag('unknown.tag'))
