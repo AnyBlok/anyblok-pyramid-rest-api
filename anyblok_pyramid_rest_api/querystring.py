@@ -6,11 +6,12 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
-
 from .validator import (
     FILTER_OPERATORS, ORDER_BY_OPERATORS, deserialize_querystring
 )
 from sqlalchemy import or_
+from logging import getLogger
+logger = getLogger(__name__)
 
 
 class QueryString:
@@ -103,6 +104,7 @@ class QueryString:
                 str(e)
             )
             self.request.errors.status = 400
+            logger.exception(str(e))
 
         return query
 
@@ -118,6 +120,7 @@ class QueryString:
                         str(e)
                     )
                     self.request.errors.status = 400
+                    logger.exception(str(e))
             else:
                 self.request.errors.add(
                     'querystring',
