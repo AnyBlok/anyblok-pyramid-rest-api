@@ -60,7 +60,7 @@ class QueryString:
                 self.request.errors.add(
                     'querystring',
                     '400 Bad Request',
-                    "No key filled" % key)
+                    "No key filled %r" % item)
                 self.request.errors.status = 400
             elif self.has_specific_filter(key, op):
                 query = self.specific_filter(query, key, op, value, mode)
@@ -155,7 +155,7 @@ class QueryString:
                 self.request.errors.add(
                     'querystring',
                     '400 Bad Request',
-                    "No key ordered" % key)
+                    "No key ordered %r" % item)
                 self.request.errors.status = 400
             else:
                 res = self.get_model_and_key_from_relationship(

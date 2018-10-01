@@ -97,6 +97,30 @@ class TestQueryString(DBTestCase):
         obj = Q.one()
         self.assertEqual(obj.name, 'anyblok-core')
 
+    def test_querystring_update_filter_or_ilike(self):
+        registry = self.init_registry(None)
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = 'name'
+        op = 'or-ilike'
+        value = 'core,test'
+        qs = QueryString(request, model)
+        Q = query.filter(qs.update_filter(model, key, op, value))
+        Q = Q.order_by('name')
+        obj = Q.all()
+        self.assertEqual(obj.name, ['anyblok-core', 'anyblok-test'])
+
+    def test_querystring_update_filter_or_without_value(self):
+        registry = self.init_registry(None)
+        request = MockRequest(self)
+        model = registry.System.Blok
+        key = 'name'
+        op = 'or-ilike'
+        value = None
+        qs = QueryString(request, model)
+        self.assertIsNone(qs.update_or_filter(model, key, op, value))
+
     def test_querystring_update_filter_lt(self):
         registry = self.init_registry(add_integer_class)
         request = MockRequest(self)
@@ -223,6 +247,19 @@ class TestQueryString(DBTestCase):
         obj = Q.one()
         self.assertEqual(obj.name, 'anyblok-core')
 
+    def test_querystring_from_filter_by_without_key(self):
+        registry = self.init_registry(None)
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = None
+        op = 'eq'
+        value = 'anyblok-core'
+        qs = QueryString(request, model)
+        qs.filter_by = [dict(key=key, op=op, value=value)]
+        qs.from_filter_by(query)
+        self.assertEqual(len(request.errors.messages), 1)
+
     def test_querystring_from_filter_by_with_relationship(self):
         registry = self.init_registry(add_many2one_class)
         request = MockRequest(self)
@@ -303,6 +340,18 @@ class TestQueryString(DBTestCase):
         self.assertEqual(
             Q.all().name,
             query.order_by(model.name.asc()).all().name)
+
+    def test_querystring_from_order_by_without_key(self):
+        registry = self.init_registry(None)
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = None
+        op = 'asc'
+        qs = QueryString(request, model)
+        qs.order_by = [dict(key=key, op=op)]
+        qs.from_order_by(query)
+        self.assertEqual(len(request.errors.messages), 1)
 
     def test_querystring_from_order_by_ok_with_relationship(self):
         registry = self.init_registry(add_many2one_class)
