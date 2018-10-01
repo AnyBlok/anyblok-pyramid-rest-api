@@ -291,10 +291,10 @@ class CrudResource:
         return query
 
     @classmethod
-    def get_value_or_call_method(self, attribute, *args, **kwargs):
+    def get_value_or_call_method(cls, attribute, *args, **kwargs):
         value = None
-        if hasattr(self, attribute):
-            value = getattr(self, attribute)
+        if hasattr(cls, attribute):
+            value = getattr(cls, attribute)
             if isinstance(value, MethodType):
                 value = value(*args, **kwargs)
 
@@ -321,7 +321,7 @@ class CrudResource:
         return Schema
 
     @classmethod
-    def get_serialize_opts(self, rest_action):
+    def get_serialize_opts(cls, rest_action):
         opts = {}
         if rest_action == 'collection_get':
             opts['many'] = True
@@ -344,7 +344,7 @@ class CrudResource:
         return Schema
 
     @classmethod
-    def get_deserialize_opts(self, rest_action):
+    def get_deserialize_opts(cls, rest_action):
         opts = {}
         if rest_action == 'patch':
             opts['partial'] = True
@@ -364,7 +364,7 @@ class CrudResource:
         return Schema
 
     @classmethod
-    def get_path_opts(self, rest_action):
+    def get_path_opts(cls, rest_action):
         opts = {'context': {'only_primary_key': True}}
         return opts
 
