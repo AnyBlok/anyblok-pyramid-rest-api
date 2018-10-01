@@ -3,7 +3,7 @@ omit =
     # omit anything in a tests directory anywhere
     */tests/*
     # omit anything in a test_bloks directory anywhere
-    anyblok/test_bloks/*
+    */test_bloks/*
 
 [report]
 # Regexes for lines to exclude from consideration
