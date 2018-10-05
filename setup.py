@@ -14,7 +14,7 @@
 from setuptools import setup, find_packages
 from os.path import abspath, dirname, join
 
-
+version = '0.2.1'
 here = abspath(dirname(__file__))
 
 with open(join(here, 'README.rst'), 'r',
@@ -49,7 +49,7 @@ test_bloks = [
 
 setup(
     name='anyblok_pyramid_rest_api',
-    version='0.2.0',
+    version=version,
     description="Tools to build rest api's",
     long_description=readme + '\n\n' + changelog,
     author="Franck Bret",
