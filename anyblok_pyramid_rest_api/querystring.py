@@ -108,6 +108,26 @@ class QueryString:
 
         return query
 
+    def has_specific_order_by(self, key):
+        if self.adapter is None:
+            return False
+
+        return self.adapter.has_order_by_for(key)
+
+    def specific_order_by(self, query, key, op):
+        try:
+            return self.adapter.get_order_by_for(key)(self, query, op)
+        except Exception as e:
+            self.request.errors.add(
+                'querystring',
+                "Order by %s %s" % (key, op),
+                str(e)
+            )
+            self.request.errors.status = 400
+            logger.exception(str(e))
+
+        return query
+
     def from_tags(self, query):
         for tag in self.tags:
             if self.has_tag(tag):
@@ -157,6 +177,8 @@ class QueryString:
                     '400 Bad Request',
                     "No key ordered %r" % item)
                 self.request.errors.status = 400
+            elif self.has_specific_order_by(key):
+                query = self.specific_order_by(query, key, op)
             else:
                 res = self.get_model_and_key_from_relationship(
                     query, self.Model, key.split('.'))
@@ -245,6 +267,8 @@ class QueryString:
     def get_model_and_key_from_relationship(self, query, model, keys,
                                             already_join=False):
         key = keys[0]
+        if not hasattr(model, 'fields_description'):
+            return '%r is not an SQL Model you should use Adapter' % model
         if key not in model.fields_description():
             return '%r does not exist in model %s.' % (key, model)
 

@@ -20,6 +20,7 @@ class Adapter:
         self.Model = Model
         self.loaded = False
         self.filters = {}
+        self.orders_by = {}
         self.tags = {}
 
     def load_decorators(self):
@@ -27,6 +28,8 @@ class Adapter:
             if hasattr(value, 'is_filter'):
                 key, operators = value.is_filter
                 self.filters[key] = {operator: attr for operator in operators}
+            elif hasattr(value, 'is_order_by'):
+                self.orders_by[value.is_order_by] = attr
             elif hasattr(value, 'is_tag'):
                 self.tags[value.is_tag] = attr
 
@@ -35,6 +38,12 @@ class Adapter:
 
     def get_filter_for(self, key, operator):
         return getattr(self, self.filters[key][operator])
+
+    def has_order_by_for(self, key):
+        return True if self.orders_by.get(key) else False
+
+    def get_order_by_for(self, key):
+        return getattr(self, self.orders_by[key])
 
     def has_tag_for(self, tag):
         return True if self.tags.get(tag) else False
@@ -49,6 +58,14 @@ class Adapter:
 
         def wrapper(method):
             method.is_filter = (key, operators)
+            return method
+
+        return wrapper
+
+    @classmethod
+    def order_by(cls, name):
+        def wrapper(method):
+            method.is_order_by = name
             return method
 
         return wrapper
