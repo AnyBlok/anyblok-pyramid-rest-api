@@ -4,6 +4,14 @@ Change Log
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+0.2.2
+-----
+
+Fixed
+~~~~~
+
+* in the context manager to save the error, the registry is now rollbacked
+
 0.2.1 (2019-10-06)
 ------------------
 

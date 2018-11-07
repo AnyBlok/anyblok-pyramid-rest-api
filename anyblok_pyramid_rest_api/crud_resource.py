@@ -29,6 +29,7 @@ def saved_errors_in_request(request):
     try:
         yield
     except Exception as e:
+        request.anyblok.registry.rollback()
         logger.exception(e)
         request.errors.add(
             'body', '500 Internal Server Error', str(e))
@@ -80,6 +81,7 @@ def post_item(request, Model):
     try:
         return Model.insert(**request.validated['body'])
     except Exception as e:
+        request.anyblok.registry.rollback()
         request.errors.add('body', '500 Internal Server Error', str(e))
         request.errors.status = 500
 
@@ -277,6 +279,7 @@ class CrudResource:
             result = schema.load(base[part])
             request.validated[part] = result
         except ValidationError as err:
+            request.anyblok.registry.rollback()
             logger.exception(err)
             errors = err.messages
             for k, v in errors.items():
