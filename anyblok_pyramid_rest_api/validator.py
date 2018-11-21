@@ -101,6 +101,7 @@ def base_validator(request, schema, deserializer, only, unknown=INCLUDE):
         deserializer = extract_cstruct
 
     base = deserializer(request)
+    logger.debug('base receipt: %r', base)
     if schema is None:
         request.validated = base
         return
@@ -113,6 +114,7 @@ def base_validator(request, schema, deserializer, only, unknown=INCLUDE):
         request.validated = result
     except ValidationError as err:
         errors = err.messages
+        logger.exception(errors)
         for k, v in errors.items():
             request.errors.add(
                 k, 'Validation error for %s' % k,

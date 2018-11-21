@@ -275,6 +275,10 @@ class CrudResource:
 
         opts['context']['registry'] = request.anyblok.registry
         try:
+            logger.debug('Validate %r with schema %r and option %r',
+                         base[part], Schema, opts)
+            print('Validate %r with schema %r and option %r',
+                  base[part], Schema, opts)
             schema = Schema(**opts)
             result = schema.load(base[part])
             request.validated[part] = result
