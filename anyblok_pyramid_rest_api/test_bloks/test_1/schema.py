@@ -40,7 +40,9 @@ class ThingRequestSchema(FullRequestSchema):
     """This one inherits FullRequestSchema and represents the request
     model.Example
     """
-    body = fields.Nested(ThingSchema(partial=('uuid',)))
+    body = fields.Nested(ThingSchema(only=(
+        'name', 'secret', 'example_id', 'example', 'create_date',
+        'update_date')))
     path = fields.Nested(ThingSchema(only=('uuid',)))
 
 
@@ -48,5 +50,5 @@ class AnotherSchema(FullRequestSchema):
     """This one inherits FullRequestSchema and represents the request
     model.Example
     """
-    body = fields.Nested(ExampleSchema(partial=('id',)))
-    path = fields.Nested(ExampleSchema(only=('id',)))
+    body = fields.Nested(ExampleSchema, only=('name',))
+    path = fields.Nested(ExampleSchema, only=('id',))

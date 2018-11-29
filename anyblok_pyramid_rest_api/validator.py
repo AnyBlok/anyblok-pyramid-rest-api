@@ -22,14 +22,12 @@ ORDER_BY_OPERATORS = ['asc', 'desc']
 
 
 def parse_key_with_two_elements(filter_):
-    # TODO check for errors into string pattern
-    pattern = ".*\[(.*)\]\[(.*)\]"
+    pattern = ".*\\[(.*)\\]\\[(.*)\\]"
     return re.match(pattern, filter_).groups()
 
 
 def parse_key_with_one_element(filter_):
-    # TODO check for errors into string pattern
-    pattern = ".*\[(.*)\]"
+    pattern = ".*\\[(.*)\\]"
     return re.match(pattern, filter_).groups()[0]
 
 
