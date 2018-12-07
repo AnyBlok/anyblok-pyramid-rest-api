@@ -12,6 +12,15 @@ Removed
 
 * Compatibility with python 3.3
 
+Fixed
+~~~~~
+* QueryString filters and tags are executed only one time by query
+
+Refactored
+~~~~~~~~~~
+
+* The error field is now the key of the errors description dict (All validation errors messages are now dict)
+
 0.2.2
 -----
 
