@@ -289,10 +289,7 @@ class CrudResourceSchema:
         self.assertEqual(
             fail.json_body.get('errors')[0].get('name'),
             'Validation error for body')
-        self.assertDictEqual(
-            fail.json_body.get('errors')[0].get('description'),
-            {'name': ['Missing data for required field.']}
-        )
+        self.assertEqual(len(fail.json_body.get('errors')), 2)
 
     def test_customer_put(self):
         """Customer PUT /customers/{id}"""
