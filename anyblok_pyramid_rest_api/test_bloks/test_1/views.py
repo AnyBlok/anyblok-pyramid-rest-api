@@ -77,8 +77,6 @@ def another_service_put(request):
                                  schema=AnotherSchema)
 def another_service_post(request):
     """ body_validator + schema
-    As it is a POST, exclude 'id' from validation with the `partial` arg
-    on schema instantiation
     """
     registry = request.anyblok.registry
     model = registry.get('Model.Example')
@@ -129,8 +127,6 @@ def thing_service_delete(request):
                                schema=ThingRequestSchema)
 def thing_service_post(request):
     """ body_validator + schema
-    As it is a POST, exclude 'id' from validation with the `partial` arg
-    on schema instantiation
     """
     item = post_item(request, 'Model.Thing')
     schema = ThingSchema()

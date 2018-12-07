@@ -31,14 +31,14 @@ class ThingSchema(Schema):
     name = fields.Str(required=True)
     secret = fields.Str(required=True, load_only=True)
     example_id = fields.Int(required=True)
-    example = fields.Nested(ExampleSchema())
+    example = fields.Nested(ExampleSchema)
     create_date = fields.DateTime(dump_only=True)
     update_date = fields.DateTime(dump_only=True)
 
 
 class ThingRequestSchema(FullRequestSchema):
     """This one inherits FullRequestSchema and represents the request
-    model.Example
+    model.Thing
     """
     body = fields.Nested(ThingSchema(only=(
         'name', 'secret', 'example_id', 'example', 'create_date',

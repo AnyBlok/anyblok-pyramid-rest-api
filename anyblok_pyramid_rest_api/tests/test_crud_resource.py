@@ -273,9 +273,10 @@ class CrudResourceSchema:
         self.assertEqual(fail.json_body.get('status'), 'error')
         self.assertEqual(
             fail.json_body.get('errors')[0].get('location'), 'body')
-        self.assertEqual(
+        self.assertDictEqual(
             fail.json_body.get('errors')[0].get('description'),
-            'Missing data for required field..\n')
+            {'name': ['Missing data for required field.']}
+        )
 
     def test_customer_collection_post_bad_key_in_body(self):
         """Customer POST bad key in body /customers"""
@@ -288,6 +289,10 @@ class CrudResourceSchema:
         self.assertEqual(
             fail.json_body.get('errors')[0].get('name'),
             'Validation error for body')
+        self.assertDictEqual(
+            fail.json_body.get('errors')[0].get('description'),
+            {'name': ['Missing data for required field.']}
+        )
 
     def test_customer_put(self):
         """Customer PUT /customers/{id}"""
