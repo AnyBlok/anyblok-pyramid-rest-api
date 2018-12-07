@@ -50,9 +50,11 @@ def update_from_query_string(request, Model, query, adapter):
     if request.params:
         # TODO: Implement schema validation to use request.validated
         querystring = QueryString(request, Model, adapter=adapter)
-        total_query = querystring.update_sqlalchemy_query(
-            query, only_filter=True)
-        query = querystring.update_sqlalchemy_query(query)
+        total_query = querystring.from_filter_by(query)
+        total_query = querystring.from_tags(total_query)
+        query = querystring.from_order_by(total_query)
+        query = querystring.from_limit(query)
+        query = querystring.from_offset(query)
         # TODO: Advanced pagination with Link Header
         # Link: '<https://api.github.com/user/repos?page=3&per_page=100>;
         # rel="next",
@@ -277,8 +279,6 @@ class CrudResource:
         try:
             logger.debug('Validate %r with schema %r and option %r',
                          base[part], Schema, opts)
-            print('Validate %r with schema %r and option %r',
-                  base[part], Schema, opts)
             schema = Schema(**opts)
             result = schema.load(base[part])
             request.validated[part] = result
