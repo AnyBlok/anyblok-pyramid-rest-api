@@ -344,9 +344,112 @@ class TestCrudResourceModelSchema(CrudResourceSchema, PyramidDBTestCase):
         self.path = '/customers/v3/%s'
 
 
-class TestCrudResourceWithAdapter(CrudResourceSchema, PyramidDBTestCase):
+class CrudResourceAdapter:
+
+    def create_adapter_customers(self):
+        self.create_customer()
+        self.create_customer(name="robert", tag_name="orange", zipcode="001")
+
+    def test_adapter_get_all_without_tag_or_custom_filter(self):
+        self.create_adapter_customers()
+        response = self.webserver.get(self.collection_path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 2)
+
+    def test_adapter_tag(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tag=green"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "bob")
+
+    def test_adapter_unexisting_tag(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tag=unexisting"
+        response = self.webserver.get(path, status=400)
+        self.assertEqual(response.status_code, 400)
+
+    def test_adapter_wrong_tag(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tag=wrong"
+        response = self.webserver.get(path, status=400)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(len(response.json_body), 2)
+
+    def test_adapter_tags_1(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tags=green"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "bob")
+
+    def test_adapter_tags_2(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tags=green,orange"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 0)
+
+    def test_adapter_tags_3(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tags=orange"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "robert")
+
+    def test_adapter_tags_and_context_1(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tag=colors&context[colors]=orange"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "robert")
+
+    def test_adapter_tags_and_context_2(self):
+        self.create_adapter_customers()
+        path = self.collection_path
+        path += "?tag=colors&context[colors]=green,orange"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 2)
+
+    def test_adapter_customer_filter(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?filter[addresses.city][ilike]=001"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "robert")
+
+    def test_adapter_wrong_filter(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?filter[addresses.other][ilike]=001"
+        response = self.webserver.get(path, status=400)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(len(response.json_body), 2)
+
+    def test_adapter_wrong_order_by(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?order_by[asc]=wrong"
+        response = self.webserver.get(path, status=400)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(len(response.json_body), 2)
+
+    def test_adapter_order_by(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?order_by[asc]=address"
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body[0].get('name'), "bob")
+
+
+class TestCrudResourceWithAdapter(CrudResourceAdapter, CrudResourceSchema,
+                                  PyramidDBTestCase):
     """Test Customers and Addresses from
-    test_bloks/test_3/views.py
+    test_bloks/test_4/views.py
     """
 
     def setUp(self):
@@ -356,95 +459,10 @@ class TestCrudResourceWithAdapter(CrudResourceSchema, PyramidDBTestCase):
         self.collection_path = '/customers/v4'
         self.path = '/customers/v4/%s'
 
-    def create_adapter_customers(self):
-        self.create_customer()
-        self.create_customer(name="robert", tag_name="orange", zipcode="001")
-
-    def test_adapter_get_all_without_tag_or_custom_filter(self):
-        self.create_adapter_customers()
-        response = self.webserver.get(self.collection_path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 2)
-
-    def test_adapter_tag(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tag=green"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 1)
-        self.assertEqual(response.json_body[0].get('name'), "bob")
-
-    def test_adapter_unexisting_tag(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tag=unexisting"
-        response = self.webserver.get(path, status=400)
-        self.assertEqual(response.status_code, 400)
-
-    def test_adapter_wrong_tag(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tag=wrong"
-        response = self.webserver.get(path, status=400)
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(len(response.json_body), 2)
-
-    def test_adapter_tags_1(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tags=green"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 1)
-        self.assertEqual(response.json_body[0].get('name'), "bob")
-
-    def test_adapter_tags_2(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tags=green,orange"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 0)
-
-    def test_adapter_tags_3(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tags=orange"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 1)
-        self.assertEqual(response.json_body[0].get('name'), "robert")
-
-    def test_adapter_tags_and_context_1(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tag=colors&context[colors]=orange"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 1)
-        self.assertEqual(response.json_body[0].get('name'), "robert")
-
-    def test_adapter_tags_and_context_2(self):
-        self.create_adapter_customers()
-        path = self.collection_path
-        path += "?tag=colors&context[colors]=green,orange"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 2)
-
-    def test_adapter_customer_filter(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?filter[addresses.city][ilike]=001"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 1)
-        self.assertEqual(response.json_body[0].get('name'), "robert")
-
-    def test_adapter_wrong_filter(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?filter[addresses.other][ilike]=001"
-        response = self.webserver.get(path, status=400)
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(len(response.json_body), 2)
-
 
 class TestCrudResourceWithAdapter2(CrudResourceSchema, PyramidDBTestCase):
     """Test Customers and Addresses from
-    test_bloks/test_3/views.py
+    test_bloks/test_6/views.py
     """
 
     def setUp(self):
@@ -453,91 +471,6 @@ class TestCrudResourceWithAdapter2(CrudResourceSchema, PyramidDBTestCase):
         self.registry.upgrade(install=('test_rest_api_6',))
         self.collection_path = '/customers/v6'
         self.path = '/customers/v6/%s'
-
-    def create_adapter_customers(self):
-        self.create_customer()
-        self.create_customer(name="robert", tag_name="orange", zipcode="001")
-
-    def test_adapter_get_all_without_tag_or_custom_filter(self):
-        self.create_adapter_customers()
-        response = self.webserver.get(self.collection_path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 2)
-
-    def test_adapter_tag(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tag=green"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 1)
-        self.assertEqual(response.json_body[0].get('name'), "bob")
-
-    def test_adapter_unexisting_tag(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tag=unexisting"
-        response = self.webserver.get(path, status=400)
-        self.assertEqual(response.status_code, 400)
-
-    def test_adapter_wrong_tag(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tag=wrong"
-        response = self.webserver.get(path, status=400)
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(len(response.json_body), 2)
-
-    def test_adapter_tags_1(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tags=green"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 1)
-        self.assertEqual(response.json_body[0].get('name'), "bob")
-
-    def test_adapter_tags_2(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tags=green,orange"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 0)
-
-    def test_adapter_tags_3(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tags=orange"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 1)
-        self.assertEqual(response.json_body[0].get('name'), "robert")
-
-    def test_adapter_tags_and_context_1(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?tag=colors&context[colors]=orange"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 1)
-        self.assertEqual(response.json_body[0].get('name'), "robert")
-
-    def test_adapter_tags_and_context_2(self):
-        self.create_adapter_customers()
-        path = self.collection_path
-        path += "?tag=colors&context[colors]=green,orange"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 2)
-
-    def test_adapter_customer_filter(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?filter[addresses.city][ilike]=001"
-        response = self.webserver.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json_body), 1)
-        self.assertEqual(response.json_body[0].get('name'), "robert")
-
-    def test_adapter_wrong_filter(self):
-        self.create_adapter_customers()
-        path = self.collection_path + "?filter[addresses.other][ilike]=001"
-        response = self.webserver.get(path, status=400)
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(len(response.json_body), 2)
 
 
 class TestCrudResourceModelSchemaValidator(CrudResourceSchema,

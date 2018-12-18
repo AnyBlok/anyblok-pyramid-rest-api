@@ -56,6 +56,16 @@ class CustomerAdapter(Adapter):
                      value, mode):
         raise Exception('Wrong filters')
 
+    @Adapter.order_by('wrong')
+    def order_by_wrong(self, querystring, query, operator):
+        raise Exception('Wrong tags')
+
+    @Adapter.order_by('address')
+    def order_by_city(self, querystring, query, operator):
+        query = query.join(self.registry.Customer.addresses, aliased=True)
+        query = query.join(self.registry.Address.city, aliased=True)
+        return query.order_by(self.registry.City.zipcode)
+
 
 @resource(
     collection_path='/customers/v4',

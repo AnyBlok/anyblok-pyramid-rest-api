@@ -64,3 +64,9 @@ class CustomerResourceV6(CrudResource):
         def wrong_filter(self, querystring, query, operator,
                          value, mode):
             raise Exception('Wrong filters')
+
+        @Adapter.order_by('address')
+        def order_by_city(self, querystring, query, operator):
+            query = query.join(self.registry.Customer.addresses, aliased=True)
+            query = query.join(self.registry.Address.city, aliased=True)
+            return query.order_by(self.registry.City.zipcode)

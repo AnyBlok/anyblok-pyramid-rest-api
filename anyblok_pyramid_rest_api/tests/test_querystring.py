@@ -53,7 +53,7 @@ class MockRequest:
 
     def __init__(self, testcase):
         self.errors = MockRequestError(testcase)
-        self.params = None
+        self.params = {}
 
 
 class TestQueryString(DBTestCase):
@@ -70,6 +70,14 @@ class TestQueryString(DBTestCase):
         Q = query.filter(qs.update_filter(model, key, op, value))
         obj = Q.one()
         self.assertEqual(obj.name, 'anyblok-core')
+
+    def test_querystring_update_sqlalchemy_query(self):
+        registry = self.init_registry(None)
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        qs = QueryString(request, model)
+        qs.update_sqlalchemy_query(query)
 
     def test_querystring_update_filter_like(self):
         registry = self.init_registry(None)

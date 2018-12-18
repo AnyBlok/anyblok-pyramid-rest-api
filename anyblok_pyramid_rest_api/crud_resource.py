@@ -74,75 +74,63 @@ def update_from_query_string(request, Model, query, adapter):
 
 
 def post_item(request, Model):
-    if request.errors:
-        return
+    if not request.errors:
+        if isinstance(Model, str):
+            Model = request.anyblok.registry.get(Model)
 
-    if isinstance(Model, str):
-        Model = request.anyblok.registry.get(Model)
-
-    try:
-        return Model.insert(**request.validated['body'])
-    except Exception as e:
-        request.anyblok.registry.rollback()
-        request.errors.add('body', '500 Internal Server Error', str(e))
-        request.errors.status = 500
+        with saved_errors_in_request(request):
+            return Model.insert(**request.validated['body'])
 
 
 def get_items(request, Model, Adapter=None):
-    if request.errors:
-        return
+    if not request.errors:
+        if isinstance(Model, str):
+            Model = request.anyblok.registry.get(Model)
 
-    if isinstance(Model, str):
-        Model = request.anyblok.registry.get(Model)
+        query = Model.query()
+        query = update_from_query_string(request, Model, query, Adapter)
+        if not query.count():
+            return
 
-    query = Model.query()
-    query = update_from_query_string(request, Model, query, Adapter)
-    if not query.count():
-        return
-
-    return query.all()
+        return query.all()
 
 
 def get_item(request, Model):
-    if request.errors:
-        return
+    if not request.errors:
+        if isinstance(Model, str):
+            Model = request.anyblok.registry.get(Model)
 
-    if isinstance(Model, str):
-        Model = request.anyblok.registry.get(Model)
-
-    path = get_path(request)
-    model_pks = Model.get_primary_keys()
-    pks = {x: path[x] for x in model_pks}
-    item = Model.from_primary_keys(**pks)
-    if item:
-        return item
-    else:
-        path = ', '.join(
-            ['%s=%s' % (x, y)
-             for x, y in request.validated.get('path', {}).items()])
-        request.errors.add(
-            'path', '404 not found',
-            'Resource %s with %s does not exist.' % (
-                Model.__registry_name__, path))
-        request.errors.status = 404
+        path = get_path(request)
+        model_pks = Model.get_primary_keys()
+        pks = {x: path[x] for x in model_pks}
+        item = Model.from_primary_keys(**pks)
+        if item:
+            return item
+        else:
+            path = ', '.join(
+                ['%s=%s' % (x, y)
+                 for x, y in request.validated.get('path', {}).items()])
+            request.errors.add(
+                'path', '404 not found',
+                'Resource %s with %s does not exist.' % (
+                    Model.__registry_name__, path))
+            request.errors.status = 404
 
 
 def put_item(request, Model):
     """
     """
-    if request.errors:
-        return
+    if not request.errors:
+        if isinstance(Model, str):
+            Model = request.anyblok.registry.get(Model)
 
-    if isinstance(Model, str):
-        Model = request.anyblok.registry.get(Model)
+        item = get_item(request, Model)
+        if item:
+            body = request.validated.get('body', request.validated)
+            with saved_errors_in_request(request):
+                item.update(**body)
 
-    item = get_item(request, Model)
-    if item:
-        body = request.validated.get('body', request.validated)
-        with saved_errors_in_request(request):
-            item.update(**body)
-
-        return item
+            return item
 
 
 patch_item = put_item
@@ -151,16 +139,14 @@ patch_item = put_item
 def delete_item(request, Model):
     """
     """
-    if request.errors:
-        return
+    if not request.errors:
+        if isinstance(Model, str):
+            Model = request.anyblok.registry.get(Model)
 
-    if isinstance(Model, str):
-        Model = request.anyblok.registry.get(Model)
-
-    item = get_item(request, Model)
-    if item:
-        with saved_errors_in_request(request):
-            item.delete()
+        item = get_item(request, Model)
+        if item:
+            with saved_errors_in_request(request):
+                item.delete()
 
 
 # HOOK
@@ -246,6 +232,10 @@ class CrudResource:
     @classmethod
     def get_model_name(cls, request, rest_action=None, base=None):
         return cls.model
+
+    def view_is_activated(self, condition):
+        if not condition:
+            raise HTTPNotFound()
 
     def model_name(self, rest_action=None):
         return self.get_model_name(
@@ -385,59 +375,41 @@ class CrudResource:
 
     @cornice_view(validators=(collection_get_validator,), permission="read")
     def collection_get(self):
-        if not self.has_collection_get:
-            raise HTTPNotFound()
+        self.view_is_activated(self.has_collection_get)
+        if not self.request.errors:
+            Model = self.get_model('collection_get')
+            query = self.update_collection_get_filter(Model.query())
+            query = update_from_query_string(
+                self.request, Model, query, self.adapter)
+            if not query.count():
+                return []
 
-        if self.request.errors:
-            return
-
-        Model = self.get_model('collection_get')
-        query = self.update_collection_get_filter(Model.query())
-        query = update_from_query_string(
-            self.request, Model, query, self.adapter)
-        if not query.count():
-            return []
-
-        return self.serialize('collection_get', query.all())
+            return self.serialize('collection_get', query.all())
 
     def create(self, Model, params):
         return Model.insert(**params)
 
     @cornice_view(validators=(collection_post_validator,), permission="create")
     def collection_post(self):
-        if not self.has_collection_post:
-            raise HTTPNotFound()
-
-        if self.request.errors:
-            return
-
-        body = self.request.validated.get('body', self.request.validated)
-        item = None
-        if body:
+        self.view_is_activated(self.has_collection_post)
+        if not self.request.errors:
+            body = self.request.validated.get('body', self.request.validated)
+            item = None
             Model = self.get_model('collection_post')
             with saved_errors_in_request(self.request):
                 item = self.create(Model, params=body)
-        else:
-            self.request.errors.add(
-                'body', '400 bad request',
-                'You can not post an empty body')
-            self.request.errors.status = 400
 
-        if item:
-            return self.serialize('collection_post', item)
+            if item:
+                return self.serialize('collection_post', item)
 
     @cornice_view(validators=(get_validator,), permission="read")
     def get(self):
-        if not self.has_get:
-            raise HTTPNotFound()
-
-        if self.request.errors:
-            return
-
-        Model = self.get_model('get')
-        item = get_item(self.request, Model)
-        if item:
-            return self.serialize('get', item)
+        self.view_is_activated(self.has_get)
+        if not self.request.errors:
+            Model = self.get_model('get')
+            item = get_item(self.request, Model)
+            if item:
+                return self.serialize('get', item)
 
     def delete_entry(self, item):
         item.delete()
@@ -446,19 +418,15 @@ class CrudResource:
     def delete(self):
         """
         """
-        if not self.has_delete:
-            raise HTTPNotFound()
+        self.view_is_activated(self.has_delete)
+        if not self.request.errors:
+            Model = self.get_model('delete')
+            item = get_item(self.request, Model)
+            if item:
+                with saved_errors_in_request(self.request):
+                    self.delete_entry(item)
 
-        if self.request.errors:
-            return
-
-        Model = self.get_model('delete')
-        item = get_item(self.request, Model)
-        if item:
-            with saved_errors_in_request(self.request):
-                self.delete_entry(item)
-
-        return {}
+            return {}
 
     def update(self, item, params=None):
         if params is None:
@@ -470,36 +438,30 @@ class CrudResource:
     def patch(self):
         """
         """
-        if not self.has_patch:
-            raise HTTPNotFound()
+        self.view_is_activated(self.has_patch)
+        if not self.request.errors:
+            Model = self.get_model('patch')
+            item = get_item(self.request, Model)
+            if item:
+                body = self.request.validated.get(
+                    'body', self.request.validated)
+                with saved_errors_in_request(self.request):
+                    self.update(item, params=body)
 
-        if self.request.errors:
-            return
-
-        Model = self.get_model('patch')
-        item = get_item(self.request, Model)
-        if item:
-            body = self.request.validated.get('body', self.request.validated)
-            with saved_errors_in_request(self.request):
-                self.update(item, params=body)
-
-            return self.serialize('patch', item)
+                return self.serialize('patch', item)
 
     @cornice_view(validators=(put_validator,), permission="update")
     def put(self):
         """
         """
-        if not self.has_put:
-            raise HTTPNotFound()
+        self.view_is_activated(self.has_put)
+        if not self.request.errors:
+            Model = self.get_model('put')
+            item = get_item(self.request, Model)
+            if item:
+                body = self.request.validated.get(
+                    'body', self.request.validated)
+                with saved_errors_in_request(self.request):
+                    self.update(item, params=body)
 
-        if self.request.errors:
-            return
-
-        Model = self.get_model('put')
-        item = get_item(self.request, Model)
-        if item:
-            body = self.request.validated.get('body', self.request.validated)
-            with saved_errors_in_request(self.request):
-                self.update(item, params=body)
-
-            return self.serialize('put', item)
+                return self.serialize('put', item)

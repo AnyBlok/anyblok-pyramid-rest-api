@@ -20,7 +20,7 @@ class QueryString:
         self.request = request
         self.adapter = adapter
         self.Model = Model
-        if request.params:
+        if request.params is not None:
             parsed_params = deserialize_querystring(request.params)
             self.filter_by = parsed_params.get('filter_by', [])
             self.tags = parsed_params.get('tags')
