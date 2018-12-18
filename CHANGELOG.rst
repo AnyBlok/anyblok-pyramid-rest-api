@@ -4,8 +4,35 @@ Change Log
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-0.3.0
+0.4.0
 -----
+
+Added
+~~~~~
+
+* CrudResource.execute(name, kwarg) decorator to define Service on:
+
+  - `collection_path`/execute/`name`: validator on the body
+  - `path`/execute/`name`: validator on the path and the body
+
+  ::
+
+      @resource(collection_path='/foo', path='/foo/{bar}')
+      class MyResource(CrudResource):
+          @CrudResource.execute('print', collection=True)  # schema optional
+          def plop(self):  # /foo/execute/print
+              # query = self.get_querystring('rest action given to get_model')
+              # body = self.body
+              ...
+
+          @CrudResource.execute('print')  # schema optional for body, pathschema for path
+          def otherplop(self):  # /foo/{bar}/execute/print
+              # body = self.body
+              ...
+
+
+0.3.0 (2018-12-07)
+------------------
 
 Removed
 ~~~~~~~
@@ -15,21 +42,14 @@ Removed
 Fixed
 ~~~~~
 * QueryString filters and tags are executed only one time by query
+* in the context manager to save the error, the registry is now rollbacked
 
 Refactored
 ~~~~~~~~~~
 
 * The error field is now the key of the errors description dict (All validation errors messages are now dict)
 
-0.2.2
------
-
-Fixed
-~~~~~
-
-* in the context manager to save the error, the registry is now rollbacked
-
-0.2.1 (2019-10-06)
+0.2.1 (2018-10-06)
 ------------------
 
 Added
@@ -42,7 +62,7 @@ Removed
 
 * VERSION file
 
-0.2.0 (2019-10-01)
+0.2.0 (2018-10-01)
 ------------------
 
 Added

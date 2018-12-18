@@ -215,3 +215,32 @@ def put_validator(request, deserializer=None, klass=None, **kwargs):
     Schema = klass.get_deserialize_schema('put', model_name)
     opts = klass.get_deserialize_opts('put')
     klass.apply_validator_schema(request, 'body', Schema, opts, base)
+
+
+def execute_validator(request, deserializer=None, klass=None, schema=None,
+                      **kwargs):
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    base = deserializer(request)
+    # validate the path
+    Schema = klass.get_path_schema('execute')
+    opts = klass.get_path_opts('execute')
+    klass.apply_validator_schema(request, 'path', Schema, opts, base)
+    # validate the body
+    if schema:
+        klass.apply_validator_schema(request, 'body', schema, {}, base)
+    else:
+        request.validated['body'] = base['body']
+
+
+def collection_execute_validator(request, deserializer=None, klass=None,
+                                 schema=None, **kwargs):
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    base = deserializer(request)
+    if schema:
+        klass.apply_validator_schema(request, 'body', schema, {}, base)
+    else:
+        request.validated['body'] = base['body']
