@@ -8,7 +8,6 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
-# import venusian
 from anyblok_marshmallow import SchemaWrapper
 from cornice.resource import view as cornice_view, add_resource, add_view
 from cornice import Service
@@ -187,16 +186,6 @@ def add_execute_on_crud_resource(cls, **kwargs):
                 service.add_view('post', attr, klass=cls)
 
     cls._services.update(services)
-
-    # def callback(context, name, ob):
-    #     # get the callbacks registred by the inner services
-    #     # and call them from here when the @resource classes are being
-    #     # scanned by venusian.
-    #     for service in services.values():
-    #         config = context.config.with_package(info.module)
-    #         config.add_cornice_service(service)
-
-    # info = venusian.attach(cls, callback, category='pyramid', depth=2)
     return cls
 
 
