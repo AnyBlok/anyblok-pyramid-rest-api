@@ -330,6 +330,70 @@ class CrudResourceSchema:
         fail = self.webserver.get(self.path % '0', status=404)
         self.assertEqual(fail.status_code, 404)
 
+    def test_customer_collection_put(self):
+        """Customer PUT /customers"""
+        ex = self.create_customer()
+        response = self.webserver.head(self.collection_path)  # fix headers
+        response = self.webserver.put_json(
+            self.collection_path, [{'id': ex.id, 'name': 'bobby'}])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "bobby")
+
+    def test_customer_collection_patch(self):
+        """Customer PATCH /customers"""
+        ex = self.create_customer()
+        response = self.webserver.head(self.collection_path)  # fix headers
+        response = self.webserver.patch_json(
+            self.collection_path, [{'id': ex.id, 'name': 'bobby'}])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "bobby")
+
+    def test_customer_collection_put_no_entry_found(self):
+        """Customer FAILED PUT /customers (no id)"""
+        response = self.webserver.put_json(
+            self.collection_path, [{'name': 'plip'}], status=400)
+        self.assertEqual(response.status_code, 400)
+
+    def test_customer_collection_put_no_entry_found2(self):
+        """Customer FAILED PUT /customers (id=0)"""
+        response = self.webserver.put_json(
+            self.collection_path, [{'id': 0, 'name': 'plip'}], status=400)
+        self.assertEqual(response.status_code, 400)
+
+    def test_customer_collection_delete(self):
+        """Customer DELETE /customers"""
+        ex = self.create_customer()
+        path = self.collection_path + '?filter[id][eq]=%d' % ex.id
+
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(int(response.headers.get('X-Total-Records')), 1)
+        self.assertEqual(int(response.headers.get('X-Count-Records')), 1)
+
+        response = self.webserver.delete_json(
+            self.collection_path, [{'id': ex.id}])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body, 1)
+
+        response = self.webserver.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(int(response.headers.get('X-Total-Records')), 0)
+        self.assertEqual(int(response.headers.get('X-Count-Records')), 0)
+
+    def test_customer_collection_delete_no_entry_found(self):
+        """Customer FAILED DELETE /customers (no id)"""
+        response = self.webserver.delete_json(
+            self.collection_path, [{}], status=400)
+        self.assertEqual(response.status_code, 400)
+
+    def test_customer_collection_delete_no_entry_found2(self):
+        """Customer FAILED DELETE /customers (id=0)"""
+        response = self.webserver.delete_json(
+            self.collection_path, [{'id': 0}], status=400)
+        self.assertEqual(response.status_code, 400)
+
 
 class TestCrudResourceModelSchema(CrudResourceSchema, PyramidDBTestCase):
     """Test Customers and Addresses from

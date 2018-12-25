@@ -30,6 +30,13 @@ Added
               # body = self.body
               ...
 
+* Collection views to update and delete collection defined by querystring:
+
+  - collection_put
+  - collection_patch
+  - collection_delete
+
+
 
 0.3.0 (2018-12-07)
 ------------------

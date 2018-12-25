@@ -7,6 +7,7 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 from anyblok_pyramid.tests.testcase import PyramidDBTestCase
 from anyblok.registry import RegistryManagerException
+from anyblok_pyramid_rest_api.crud_resource import saved_errors_in_request
 
 
 class TestCrudBlok(PyramidDBTestCase):
@@ -46,6 +47,31 @@ class TestCrudBlok(PyramidDBTestCase):
         registry.upgrade(install=('test_rest_api_2',))
         with self.assertRaises(RegistryManagerException):
             self.webserver.get('/bad/model')
+
+    def test_saved_errors_in_request(self):
+        registry = self.init_registry(None)
+
+        class Error:
+            def __init__(self):
+                self._errors = []
+                self.status = 0
+
+            def add(self, *a):
+                self._errors.append(a)
+
+        class A:
+            def __init__(self):
+                self.registry = registry
+
+        class Request:
+            anyblok = A()
+            errors = Error()
+
+        request = Request()
+        with saved_errors_in_request(request):
+            raise Exception()
+
+        self.assertEqual(request.errors.status, 500)
 
 
 class CrudResourceBlok:
