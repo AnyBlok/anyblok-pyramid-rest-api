@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 from anyblok_pyramid.tests.testcase import PyramidDBTestCase
+from anyblok.tests.testcase import LogCapture
+from sqlalchemy.exc import ProgrammingError
 
 
 class TestCrudResourceBase(PyramidDBTestCase):
@@ -47,6 +49,24 @@ class TestCrudResourceBase(PyramidDBTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plip")
 
+    def test_example_collection_post_with_errors(self):
+        """Example POST /examples/with/errors"""
+        with LogCapture() as logs:
+            fail = self.webserver.post_json(
+                '/examples/with/errors', {'name': 'plip'}, status=500)
+
+        self.assertEqual(fail.status_code, 500)
+        self.assertEqual(fail.json_body.get('status'), 'error')
+        self.assertEqual(
+            fail.json_body.get('errors')[0].get('location'), 'body')
+        self.assertEqual(
+            fail.json_body.get('errors')[0].get('description'),
+            'test'
+        )
+
+        self.assertIn('Request error found: rollback the registry',
+                      logs.get_debug_messages())
+
     def test_example_put(self):
         """Example PUT /examples/{id}"""
         ex = self.create_example()
@@ -54,6 +74,56 @@ class TestCrudResourceBase(PyramidDBTestCase):
             '/examples/%s' % ex.id, {'name': 'plip'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body.get('name'), "plip")
+
+    def test_example_put_with_errors(self):
+        """Example PUT /examples/with/error/{id}"""
+        ex = self.create_example()
+        with LogCapture() as logs:
+            with self.assertRaises(ProgrammingError):  # cause of rollback
+                self.webserver.put_json(
+                    '/examples/with/error/%s' % ex.id,
+                    {'name': 'plip'}, status=500)
+
+        self.assertIn('Request error found: rollback the registry',
+                      logs.get_debug_messages())
+
+    def test_example_patch_with_errors(self):
+        """Example PATCH /examples/with/error/{id}"""
+        ex = self.create_example()
+        with LogCapture() as logs:
+            with self.assertRaises(ProgrammingError):  # cause of rollback
+                self.webserver.patch_json(
+                    '/examples/with/error/%s' % ex.id, {'name': 'plip'},
+                    status=500)
+
+        self.assertIn('Request error found: rollback the registry',
+                      logs.get_debug_messages())
+
+    def test_example_collection_put_with_errors(self):
+        """Example PUT /examples/with/errors"""
+        ex = self.create_example()
+        with LogCapture() as logs:
+            response = self.webserver.put_json(
+                '/examples/with/errors',
+                [{'id': ex.id, 'name': 'plip'}], status=500)
+
+        self.assertEqual(response.status_code, 500)
+        self.assertNotEqual(ex.name, "plip")
+        self.assertIn('Request error found: rollback the registry',
+                      logs.get_debug_messages())
+
+    def test_example_collection_patch_with_errors(self):
+        """Example PATCH /examples/with/errors"""
+        ex = self.create_example()
+        with LogCapture() as logs:
+            response = self.webserver.patch_json(
+                '/examples/with/errors',
+                [{'id': ex.id, 'name': 'plip'}], status=500)
+
+        self.assertEqual(response.status_code, 500)
+        self.assertNotEqual(ex.name, "plip")
+        self.assertIn('Request error found: rollback the registry',
+                      logs.get_debug_messages())
 
     def test_example_put_bad_value_in_path(self):
         """Example FAILED PUT /examples/{id}"""
@@ -70,6 +140,29 @@ class TestCrudResourceBase(PyramidDBTestCase):
         response = self.webserver.get('/examples')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body, [])
+
+    def test_example_delete_with_errors(self):
+        """Example DELETE /examples/with/error/{id}"""
+        ex = self.create_example()
+        with LogCapture() as logs:
+            response = self.webserver.delete(
+                '/examples/with/error/%s' % ex.id, status=500)
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn('Request error found: rollback the registry',
+                      logs.get_debug_messages())
+
+    def test_example_collection_delete_with_errors(self):
+        """Example DELETE /examples/with/errors"""
+        ex = self.create_example()
+        with LogCapture() as logs:
+            response = self.webserver.delete_json(
+                '/examples/with/errors',
+                [{'id': ex.id}], status=500)
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn('Request error found: rollback the registry',
+                      logs.get_debug_messages())
 
     def test_example_delete_bad_value_in_path(self):
         """Example FAILED DELETE /examples/{id}"""

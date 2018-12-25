@@ -142,3 +142,39 @@ def thing_service_get_collection(request):
     schema = ThingSchema(many=True)
     collection = get_items(request, 'Model.Thing')
     return schema.dump(collection)
+
+
+@resource(collection_path='/examples/with/errors',
+          path='/examples/with/error/{id}',
+          installed_blok=current_blok())
+class ExampleResourceWithError(CrudResource):
+    model = 'Model.Example'
+
+    def add_error(self):
+        self.request.errors.add('body', '500 Internal Server Error', 'test')
+        self.request.errors.status = 500
+
+    def create(self, Model, params):
+        item = super(ExampleResourceWithError, self).create(Model, params)
+        self.add_error()
+        return item
+
+    def update(self, item, params=None):
+        super(ExampleResourceWithError, self).update(item, params=params)
+        self.add_error()
+
+    def delete_entry(self, item):
+        super(ExampleResourceWithError, self).delete_entry(item)
+        self.add_error()
+
+    def collection_update(self, querystring, params=None):
+        items = super(ExampleResourceWithError, self).collection_update(
+            querystring, params=params)
+        self.add_error()
+        return items
+
+    def delete_entries(self, querystring):
+        count = super(ExampleResourceWithError, self).delete_entries(
+            querystring)
+        self.add_error()
+        return count

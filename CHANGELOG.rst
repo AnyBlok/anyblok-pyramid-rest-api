@@ -38,6 +38,13 @@ Added
 
 
 
+
+Refactored
+~~~~~~~~~~
+
+* If a ``request.error`` is found during the execution of a view in the crud resource,
+  then a registry.rollback will be done
+
 0.3.0 (2018-12-07)
 ------------------
 
