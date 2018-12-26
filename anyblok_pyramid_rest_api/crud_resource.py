@@ -449,11 +449,10 @@ class CrudResource:
     @classmethod
     def get_serialize_opts(cls, rest_action):
         opts = {}
-        if rest_action == 'collection_get':
-            opts['many'] = True
-        elif rest_action == 'collection_put':
-            opts['many'] = True
-        elif rest_action == 'collection_patch':
+        if rest_action in ('collection_get',
+                           'collection_post',
+                           'collection_put',
+                           'collection_patch'):
             opts['many'] = True
 
         return opts
@@ -479,7 +478,7 @@ class CrudResource:
         if rest_action == 'collection_patch':
             opts['partial'] = True
             opts['many'] = True
-        elif rest_action == 'collection_put':
+        elif rest_action in ('collection_put', 'collection_post'):
             opts['many'] = True
         elif rest_action == 'collection_delete':
             opts['many'] = True
@@ -542,13 +541,14 @@ class CrudResource:
     def collection_post(self):
         self.view_is_activated(self.has_collection_post)
         if not self.request.errors:
-            item = None
+            items = []
             Model = self.get_model('collection_post')
-            with saved_errors_in_request(self.request):
-                item = self.create(Model, params=self.body)
+            for params in self.body:
+                with saved_errors_in_request(self.request):
+                    items.append(self.create(Model, params=params))
 
-            if item and not self.request.errors:
-                return self.serialize('collection_post', item)
+            if items and not self.request.errors:
+                return self.serialize('collection_post', items)
 
     def collection_update(self, Model, body):
         items = []
