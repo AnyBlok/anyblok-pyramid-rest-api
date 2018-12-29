@@ -693,7 +693,7 @@ class CrudResource:
                 return self.serialize('put', item)
 
     @classmethod
-    def execute(cls, name, permission=None, collection=False, **kwargs):
+    def service(cls, name, permission=None, collection=False, **kwargs):
         if permission is None:
             permission = name
 
