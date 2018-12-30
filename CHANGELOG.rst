@@ -19,14 +19,18 @@ Added
 
       @resource(collection_path='/foo', path='/foo/{bar}')
       class MyResource(CrudResource):
-          @CrudResource.execute('print', collection=True)  # schema optional
+          @CrudResource.service('print', collection=True)
           def plop(self):  # /foo/execute/print
+              # verb : POST (default), GET, PUT, PATCH, DELETE, ...
+              # schema optional
               # query = self.get_querystring('rest action given to get_model')
               # body = self.body
               ...
 
-          @CrudResource.execute('print')  # schema optional for body, pathschema for path
+          @CrudResource.service('print')
           def otherplop(self):  # /foo/{bar}/execute/print
+              # verb : POST (default), GET, PUT, PATCH, DELETE, ...
+              # schema optional for body, pathschema for path
               # body = self.body
               ...
 

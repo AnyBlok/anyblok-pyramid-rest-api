@@ -180,7 +180,8 @@ def add_execute_on_crud_resource(cls, **kwargs):
         service = services[service_name] = Service(
             name=service_name, depth=2, **service_kwargs)
         for view_args in method.__views__:
-            service.add_view('post', attr, klass=cls, **view_args)
+            verb = view_args.pop('verb', 'POST')
+            service.add_view(verb, attr, klass=cls, **view_args)
 
     cls._services.update(services)
     return cls

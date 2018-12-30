@@ -697,22 +697,11 @@ class CrudResourceAction:
         return customer
 
     def test_collection_action(self):
-        """Example collection POST /customers/v*/execute/action1"""
+        """Example collection GET /customers/v*/execute/action1"""
         collection_path = self.collection_path + '/execute/action1'
-        response = self.webserver.post_json(collection_path, {'name': 'test'})
+        response = self.webserver.get(collection_path)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body, 'test')
-
-    def test_collection_action_missing_name(self):
-        """Example FAIL collection POST /customers/v*/execute/action1"""
-        collection_path = self.collection_path + '/execute/action1'
-        fail = self.webserver.post_json(collection_path, {}, status=400)
-        self.assertEqual(fail.status_code, 400)
-        self.assertEqual(
-            fail.json_body.get('errors')[0].get('location'), 'body')
-        self.assertEqual(
-            fail.json_body.get('errors')[0].get('name'),
-            'Validation error for body')
 
     def test_collection_action_post_on_path(self):
         """Example collection POST /customers/v*/{id}/execute/action1"""
@@ -721,10 +710,10 @@ class CrudResourceAction:
         fail = self.webserver.get(path % cu.id, status=404)
         self.assertEqual(fail.status_code, 404)
 
-    def test_collection_action_get(self):
+    def test_collection_action_post(self):
         """Example collection GET /customers/v*/execute/action1"""
         collection_path = self.collection_path + '/execute/action1'
-        fail = self.webserver.get(collection_path, status=405)
+        fail = self.webserver.post(collection_path, status=405)
         self.assertEqual(fail.status_code, 405)
 
     def test_collection_action_put(self):
