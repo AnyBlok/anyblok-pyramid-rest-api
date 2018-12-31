@@ -686,6 +686,13 @@ class TestCrudResourceModelSchemaValidatorAndAuth(
 
 class CrudResourceAction:
 
+    def setUp(self):
+        super(CrudResourceAction, self).setUp()
+        self.collection_service_path = (
+            self.collection_path + '/execute/action1'
+        )
+        self.service_path = self.path + '/execute/action2'
+
     def create_customer(self, name="bob", tag_name="green", zipcode="000"):
         """Create a dummy customer record"""
         tag = self.registry.Tag.insert(name=tag_name)
@@ -698,55 +705,50 @@ class CrudResourceAction:
 
     def test_collection_action(self):
         """Example collection GET /customers/v*/execute/action1"""
-        collection_path = self.collection_path + '/execute/action1'
-        response = self.webserver.get(collection_path)
+        response = self.webserver.get(self.collection_service_path)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body, 'test')
 
     def test_collection_action_post_on_path(self):
         """Example collection POST /customers/v*/{id}/execute/action1"""
         cu = self.create_customer()
-        path = self.path + '/execute/action1'
-        fail = self.webserver.get(path % cu.id, status=404)
+        service_path = self.path + '/execute/action1'
+        fail = self.webserver.get(service_path % cu.id, status=404)
         self.assertEqual(fail.status_code, 404)
 
     def test_collection_action_post(self):
         """Example collection GET /customers/v*/execute/action1"""
-        collection_path = self.collection_path + '/execute/action1'
-        fail = self.webserver.post(collection_path, status=405)
+        fail = self.webserver.post(self.collection_service_path, status=405)
         self.assertEqual(fail.status_code, 405)
 
     def test_collection_action_put(self):
         """Example collection PUT /customers/v*/execute/action1"""
-        collection_path = self.collection_path + '/execute/action1'
-        fail = self.webserver.put(collection_path, status=405)
+        fail = self.webserver.put(self.collection_service_path, status=405)
         self.assertEqual(fail.status_code, 405)
 
     def test_collection_action_patch(self):
         """Example collection PATCH /customers/v*/execute/action1"""
-        collection_path = self.collection_path + '/execute/action1'
-        fail = self.webserver.patch(collection_path, status=405)
+        fail = self.webserver.patch(self.collection_service_path, status=405)
         self.assertEqual(fail.status_code, 405)
 
     def test_collection_action_delete(self):
         """Example collection DELETE /customers/v*/execute/action1"""
-        collection_path = self.collection_path + '/execute/action1'
-        fail = self.webserver.delete(collection_path, status=405)
+        fail = self.webserver.delete(self.collection_service_path, status=405)
         self.assertEqual(fail.status_code, 405)
 
     def test_action(self):
         """Example POST /customers/v*/{id}/execute/action2"""
         cu = self.create_customer()
-        path = self.path + '/execute/action2'
-        response = self.webserver.post_json(path % cu.id, {'name': 'test'})
+        response = self.webserver.post_json(
+            self.service_path % cu.id, {'name': 'test'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body, 'test')
 
     def test_action_missing_name(self):
         """Example FAIL POST /customers/v*/{id}/execute/action2"""
         cu = self.create_customer()
-        path = self.path + '/execute/action2'
-        fail = self.webserver.post_json(path % cu.id, {}, status=400)
+        fail = self.webserver.post_json(
+            self.service_path % cu.id, {}, status=400)
         self.assertEqual(fail.status_code, 400)
         self.assertEqual(
             fail.json_body.get('errors')[0].get('location'), 'body')
@@ -763,29 +765,25 @@ class CrudResourceAction:
     def test_action_get(self):
         """Example GET /customers/v*/{id}/execute/action2"""
         cu = self.create_customer()
-        path = (self.path + '/execute/action2') % cu.id
-        fail = self.webserver.get(path, status=405)
+        fail = self.webserver.get(self.service_path % cu.id, status=405)
         self.assertEqual(fail.status_code, 405)
 
     def test_action_put(self):
         """Example PUT /customers/v*/{id}/execute/action2"""
         cu = self.create_customer()
-        path = self.path + '/execute/action2'
-        fail = self.webserver.put(path % cu.id, status=405)
+        fail = self.webserver.put(self.service_path % cu.id, status=405)
         self.assertEqual(fail.status_code, 405)
 
     def test_action_patch(self):
         """Example PATCH /customers/v*/{id}/execute/action2"""
         cu = self.create_customer()
-        path = self.path + '/execute/action2'
-        fail = self.webserver.patch(path % cu.id, status=405)
+        fail = self.webserver.patch(self.service_path % cu.id, status=405)
         self.assertEqual(fail.status_code, 405)
 
     def test_action_delete(self):
         """Example DELETE /customers/v*/{id}/execute/action2"""
         cu = self.create_customer()
-        path = self.path + '/execute/action2'
-        fail = self.webserver.delete(path % cu.id, status=405)
+        fail = self.webserver.delete(self.service_path % cu.id, status=405)
         self.assertEqual(fail.status_code, 405)
 
 
@@ -796,11 +794,11 @@ class TestCrudResourceExecute1(CrudResourceAction, CrudResourceSchema,
     """
 
     def setUp(self):
+        self.collection_path = '/customers/v7'
+        self.path = '/customers/v7/%s'
         super(TestCrudResourceExecute1, self).setUp()
         self.registry = self.init_registry(None)
         self.registry.upgrade(install=('test_rest_api_7',))
-        self.collection_path = '/customers/v7'
-        self.path = '/customers/v7/%s'
 
 
 class TestCrudResourceExecute2(CrudResourceAction, CrudResourceSchema,
@@ -810,8 +808,24 @@ class TestCrudResourceExecute2(CrudResourceAction, CrudResourceSchema,
     """
 
     def setUp(self):
+        self.collection_path = '/customers/v8'
+        self.path = '/customers/v8/%s'
         super(TestCrudResourceExecute2, self).setUp()
         self.registry = self.init_registry(None)
         self.registry.upgrade(install=('test_rest_api_8',))
-        self.collection_path = '/customers/v8'
-        self.path = '/customers/v8/%s'
+
+
+class TestCrudResourceExecute3(CrudResourceAction, CrudResourceSchema,
+                               PyramidDBTestCase):
+    """Test Customers and Addresses from
+    test_bloks/test_9/views.py
+    """
+
+    def setUp(self):
+        self.collection_path = '/customers/v9'
+        self.path = '/customers/v9/%s'
+        super(TestCrudResourceExecute3, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_9',))
+        self.collection_service_path = self.collection_path + '/other/action1'
+        self.service_path = self.path + '/other/action2'

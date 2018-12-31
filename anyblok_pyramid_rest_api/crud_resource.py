@@ -153,7 +153,10 @@ def delete_item(request, Model):
                 item.delete()
 
 
-def add_execute_on_crud_resource(cls, **kwargs):
+def add_execute_on_crud_resource(cls, service_path=None, **kwargs):
+    if service_path is None:
+        service_path = '%(path)s/execute/%(name)s'
+
     services = {}
     for attr in dir(cls):
         method = getattr(cls, attr)
@@ -167,16 +170,21 @@ def add_execute_on_crud_resource(cls, **kwargs):
         if getattr(method, 'is_a_crud_resource_execute_on_collection', None):
             service_name = 'collection_' + cls.__name__.lower() + '_execute_'
             service_name += method.crud_resource_execute_name
-            service_kwargs['path'] = service_kwargs.pop('collection_path')
+            service_kwargs['path'] = service_path % {
+                'path': service_kwargs.pop('collection_path'),
+                'name': method.crud_resource_execute_name,
+            }
         elif getattr(method, 'is_a_crud_resource_execute', None):
             service_name = cls.__name__.lower() + '_execute_'
             service_name += method.crud_resource_execute_name
             del service_kwargs['collection_path']
+            service_kwargs['path'] = service_path % {
+                'path': service_kwargs['path'],
+                'name': method.crud_resource_execute_name,
+            }
         else:
             continue
 
-        service_kwargs['path'] += '/execute/'
-        service_kwargs['path'] += method.crud_resource_execute_name
         service = services[service_name] = Service(
             name=service_name, depth=2, **service_kwargs)
         for view_args in method.__views__:
@@ -190,8 +198,10 @@ def add_execute_on_crud_resource(cls, **kwargs):
 def resource(depth=2, **kwargs):
 
     def wrapper(cls):
+        service_path = kwargs.pop('service_path', None)
         klass = add_resource(cls, depth, **kwargs)
-        klass = add_execute_on_crud_resource(klass, **kwargs)
+        klass = add_execute_on_crud_resource(
+            klass, service_path=service_path, **kwargs)
         return klass
 
     return wrapper
