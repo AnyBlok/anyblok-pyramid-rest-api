@@ -829,3 +829,18 @@ class TestCrudResourceExecute3(CrudResourceAction, CrudResourceSchema,
         self.registry.upgrade(install=('test_rest_api_9',))
         self.collection_service_path = self.collection_path + '/other/action1'
         self.service_path = self.path + '/other/action2'
+
+
+class TestCrudResourceExecute4(CrudResourceAction, CrudResourceSchema,
+                               PyramidDBTestCase):
+    """Test Customers and Addresses from
+    test_bloks/test_10/views.py
+    """
+
+    def setUp(self):
+        self.collection_path = '/customers/v10'
+        self.path = '/customers/v10/%s'
+        super(TestCrudResourceExecute4, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_10',))
+        self.collection_service_path = '/foo/bar'

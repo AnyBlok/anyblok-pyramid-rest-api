@@ -185,6 +185,9 @@ def add_execute_on_crud_resource(cls, service_path=None, **kwargs):
         else:
             continue
 
+        if method.crud_resource_execute_path:
+            service_kwargs['path'] = method.crud_resource_execute_path
+
         service = services[service_name] = Service(
             name=service_name, depth=2, **service_kwargs)
         for view_args in method.__views__:
@@ -704,12 +707,14 @@ class CrudResource:
                 return self.serialize('put', item)
 
     @classmethod
-    def service(cls, name, permission=None, collection=False, **kwargs):
+    def service(cls, name, permission=None, collection=False, path=None,
+                **kwargs):
         if permission is None:
             permission = name
 
         def wrapper(method):
             method.crud_resource_execute_name = name
+            method.crud_resource_execute_path = path
 
             if collection:
                 method.is_a_crud_resource_execute_on_collection = True
