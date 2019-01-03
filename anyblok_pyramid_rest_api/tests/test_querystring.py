@@ -6,10 +6,11 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
-from anyblok.tests.testcase import DBTestCase
+import pytest
 from anyblok_pyramid_rest_api.querystring import QueryString
 from anyblok.column import Integer, String
 from anyblok.relationship import Many2One
+from .conftest import init_registry_with_bloks
 
 
 def add_integer_class():
@@ -44,8 +45,8 @@ class MockRequestError:
         self.messages = []
 
     def add(self, a1, a2, a3):
-        self.testcase.assertEqual(a1, 'querystring')
-        self.testcase.assertEqual(a2, '400 Bad Request')
+        assert a1 == 'querystring'
+        assert a2 == '400 Bad Request'
         self.messages.append(a3)
 
 
@@ -56,10 +57,16 @@ class MockRequest:
         self.params = {}
 
 
-class TestQueryString(DBTestCase):
+class TestQueryString:
 
-    def test_querystring_update_filter_eq(self):
-        registry = self.init_registry(None)
+    @pytest.fixture(autouse=True)
+    def transact(self, request, registry_blok):
+        transaction = registry_blok.begin_nested()
+        request.addfinalizer(transaction.rollback)
+        return
+
+    def test_querystring_update_filter_eq(self, registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         query = model.query()
@@ -69,18 +76,18 @@ class TestQueryString(DBTestCase):
         qs = QueryString(request, model)
         Q = query.filter(qs.update_filter(model, key, op, value))
         obj = Q.one()
-        self.assertEqual(obj.name, 'anyblok-core')
+        assert obj.name == 'anyblok-core'
 
-    def test_querystring_update_sqlalchemy_query(self):
-        registry = self.init_registry(None)
+    def test_querystring_update_sqlalchemy_query(self, registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         query = model.query()
         qs = QueryString(request, model)
         qs.update_sqlalchemy_query(query)
 
-    def test_querystring_update_filter_like(self):
-        registry = self.init_registry(None)
+    def test_querystring_update_filter_like(self, registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         query = model.query()
@@ -90,10 +97,10 @@ class TestQueryString(DBTestCase):
         qs = QueryString(request, model)
         Q = query.filter(qs.update_filter(model, key, op, value))
         obj = Q.one()
-        self.assertEqual(obj.name, 'anyblok-core')
+        assert obj.name == 'anyblok-core'
 
-    def test_querystring_update_filter_ilike(self):
-        registry = self.init_registry(None)
+    def test_querystring_update_filter_ilike(self, registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         query = model.query()
@@ -103,10 +110,10 @@ class TestQueryString(DBTestCase):
         qs = QueryString(request, model)
         Q = query.filter(qs.update_filter(model, key, op, value))
         obj = Q.one()
-        self.assertEqual(obj.name, 'anyblok-core')
+        assert obj.name == 'anyblok-core'
 
-    def test_querystring_update_filter_or_ilike(self):
-        registry = self.init_registry(None)
+    def test_querystring_update_filter_or_ilike(self, registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         query = model.query()
@@ -117,92 +124,21 @@ class TestQueryString(DBTestCase):
         Q = query.filter(qs.update_filter(model, key, op, value))
         Q = Q.order_by('name')
         obj = Q.all()
-        self.assertEqual(obj.name, ['anyblok-core', 'anyblok-test'])
+        assert obj.name == ['anyblok-core', 'anyblok-test']
 
-    def test_querystring_update_filter_or_without_value(self):
-        registry = self.init_registry(None)
+    def test_querystring_update_filter_or_without_value(self,
+                                                        registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         key = 'name'
         op = 'or-ilike'
         value = None
         qs = QueryString(request, model)
-        self.assertIsNone(qs.update_or_filter(model, key, op, value))
+        assert qs.update_or_filter(model, key, op, value) is None
 
-    def test_querystring_update_filter_lt(self):
-        registry = self.init_registry(add_integer_class)
-        request = MockRequest(self)
-        model = registry.Exemple
-        query = model.query()
-        key = 'number'
-        op = 'lt'
-        value = 10
-        qs = QueryString(request, model)
-        Q = query.filter(qs.update_filter(model, key, op, value))
-        self.assertEqual(len(Q.all()), 0)
-        model.insert(number=9)
-        self.assertEqual(len(Q.all()), 1)
-        model.insert(number=10)
-        self.assertEqual(len(Q.all()), 1)
-        model.insert(number=11)
-        self.assertEqual(len(Q.all()), 1)
-
-    def test_querystring_update_filter_lte(self):
-        registry = self.init_registry(add_integer_class)
-        request = MockRequest(self)
-        model = registry.Exemple
-        query = model.query()
-        key = 'number'
-        op = 'lte'
-        value = 10
-        qs = QueryString(request, model)
-        Q = query.filter(qs.update_filter(model, key, op, value))
-        self.assertEqual(len(Q.all()), 0)
-        model.insert(number=9)
-        self.assertEqual(len(Q.all()), 1)
-        model.insert(number=10)
-        self.assertEqual(len(Q.all()), 2)
-        model.insert(number=11)
-        self.assertEqual(len(Q.all()), 2)
-
-    def test_querystring_update_filter_gt(self):
-        registry = self.init_registry(add_integer_class)
-        request = MockRequest(self)
-        model = registry.Exemple
-        query = model.query()
-        key = 'number'
-        op = 'gt'
-        value = 10
-        qs = QueryString(request, model)
-        Q = query.filter(qs.update_filter(model, key, op, value))
-        self.assertEqual(len(Q.all()), 0)
-        model.insert(number=9)
-        self.assertEqual(len(Q.all()), 0)
-        model.insert(number=10)
-        self.assertEqual(len(Q.all()), 0)
-        model.insert(number=11)
-        self.assertEqual(len(Q.all()), 1)
-
-    def test_querystring_update_filter_gte(self):
-        registry = self.init_registry(add_integer_class)
-        request = MockRequest(self)
-        model = registry.Exemple
-        query = model.query()
-        key = 'number'
-        op = 'gte'
-        value = 10
-        qs = QueryString(request, model)
-        Q = query.filter(qs.update_filter(model, key, op, value))
-        self.assertEqual(len(Q.all()), 0)
-        model.insert(number=9)
-        self.assertEqual(len(Q.all()), 0)
-        model.insert(number=10)
-        self.assertEqual(len(Q.all()), 1)
-        model.insert(number=11)
-        self.assertEqual(len(Q.all()), 2)
-
-    def test_querystring_update_filter_in_1(self):
-        registry = self.init_registry(None)
+    def test_querystring_update_filter_in_1(self, registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         query = model.query()
@@ -212,10 +148,10 @@ class TestQueryString(DBTestCase):
         qs = QueryString(request, model)
         Q = query.filter(qs.update_filter(model, key, op, value))
         obj = Q.all()
-        self.assertEqual(obj.name, ['anyblok-core'])
+        assert obj.name == ['anyblok-core']
 
-    def test_querystring_update_filter_in_2(self):
-        registry = self.init_registry(None)
+    def test_querystring_update_filter_in_2(self, registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         query = model.query()
@@ -225,12 +161,12 @@ class TestQueryString(DBTestCase):
         qs = QueryString(request, model)
         Q = query.filter(qs.update_filter(model, key, op, value))
         names = Q.all().name
-        self.assertEqual(len(names), 2)
-        self.assertIn('anyblok-core', names)
-        self.assertIn('anyblok-test', names)
+        assert len(names) == 2
+        assert 'anyblok-core' in names
+        assert 'anyblok-test' in names
 
-    def test_querystring_update_filter_in_3(self):
-        registry = self.init_registry(None)
+    def test_querystring_update_filter_in_3(self, registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         key = 'name'
@@ -238,11 +174,12 @@ class TestQueryString(DBTestCase):
         value = ''
         qs = QueryString(request, model)
         qs.update_filter(model, key, op, value)
-        self.assertIn("Filter 'in' except a comma separated string value",
-                      request.errors.messages)
+        assert (
+            "Filter 'in' except a comma separated string value" in
+            request.errors.messages)
 
-    def test_querystring_from_filter_by_ok(self):
-        registry = self.init_registry(None)
+    def test_querystring_from_filter_by_ok(self, registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         query = model.query()
@@ -253,10 +190,10 @@ class TestQueryString(DBTestCase):
         qs.filter_by = [dict(key=key, op=op, value=value)]
         Q = qs.from_filter_by(query)
         obj = Q.one()
-        self.assertEqual(obj.name, 'anyblok-core')
+        assert obj.name == 'anyblok-core'
 
-    def test_querystring_from_filter_by_without_key(self):
-        registry = self.init_registry(None)
+    def test_querystring_from_filter_by_without_key(self, registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         query = model.query()
@@ -266,33 +203,10 @@ class TestQueryString(DBTestCase):
         qs = QueryString(request, model)
         qs.filter_by = [dict(key=key, op=op, value=value)]
         qs.from_filter_by(query)
-        self.assertEqual(len(request.errors.messages), 1)
+        assert len(request.errors.messages) == 1
 
-    def test_querystring_from_filter_by_with_relationship(self):
-        registry = self.init_registry(add_many2one_class)
-        request = MockRequest(self)
-        model = registry.Test2
-        query = model.query()
-        key = 'test.name'
-        op = 'eq'
-        value = 'test'
-        qs = QueryString(request, model)
-        qs.filter_by = [dict(key=key, op=op, value=value)]
-        Q = qs.from_filter_by(query)
-        self.assertEqual(len(Q.all()), 0)
-        t1 = registry.Test(name='test')
-        t2 = registry.Test(name='other')
-        model.insert(test=t1)
-        self.assertEqual(len(Q.all()), 1)
-        model.insert(test=t2)
-        self.assertEqual(len(Q.all()), 1)
-        model.insert(test=t2)
-        self.assertEqual(len(Q.all()), 1)
-        model.insert(test=t1)
-        self.assertEqual(len(Q.all()), 2)
-
-    def test_querystring_from_filter_by_ko_bad_op(self):
-        registry = self.init_registry(None)
+    def test_querystring_from_filter_by_ko_bad_op(self, registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         query = model.query()
@@ -302,11 +216,12 @@ class TestQueryString(DBTestCase):
         qs = QueryString(request, model)
         qs.filter_by = [dict(key=key, op=op, value=value)]
         qs.from_filter_by(query)
-        self.assertIn("Filter 'unknown' does not exist.",
-                      request.errors.messages)
+        assert (
+            "Filter 'unknown' does not exist." in
+            request.errors.messages)
 
-    def test_querystring_from_filter_by_bad_key(self):
-        registry = self.init_registry(None)
+    def test_querystring_from_filter_by_bad_key(self, registry_blok):
+        registry = registry_blok
         request = MockRequest(self)
         model = registry.System.Blok
         query = model.query()
@@ -316,12 +231,269 @@ class TestQueryString(DBTestCase):
         qs = QueryString(request, model)
         qs.filter_by = [dict(key=key, op=op, value=value)]
         qs.from_filter_by(query)
-        self.assertIn("Filter 'badkey': 'badkey' does not exist in model "
-                      "<class 'anyblok.model.factory.ModelSystemBlok'>.",
-                      request.errors.messages)
+        assert (
+            "Filter 'badkey': 'badkey' does not exist in model "
+            "<class 'anyblok.model.factory.ModelSystemBlok'>." in
+            request.errors.messages)
 
-    def test_querystring_from_filter_by_with_relationship_bad_key(self):
-        registry = self.init_registry(add_many2one_class)
+    def test_querystring_from_order_by_ok(self, registry_blok):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = 'name'
+        op = 'asc'
+        qs = QueryString(request, model)
+        qs.order_by = [dict(key=key, op=op)]
+        Q = qs.from_order_by(query)
+        assert Q.all().name == query.order_by(model.name.asc()).all().name
+
+    def test_querystring_from_order_by_without_key(self, registry_blok):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = None
+        op = 'asc'
+        qs = QueryString(request, model)
+        qs.order_by = [dict(key=key, op=op)]
+        qs.from_order_by(query)
+        assert len(request.errors.messages) == 1
+
+    def test_querystring_from_order_by_ko_bad_op(self, registry_blok):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = 'name'
+        op = 'unknown'
+        qs = QueryString(request, model)
+        qs.order_by = [dict(key=key, op=op)]
+        qs.from_order_by(query)
+        assert (
+            "ORDER_by operator 'unknown' does not exist." in
+            request.errors.messages)
+
+    def test_querystring_from_order_by_bad_key(self, registry_blok):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = 'badkey'
+        op = 'asc'
+        qs = QueryString(request, model)
+        qs.order_by = [dict(key=key, op=op)]
+        qs.from_order_by(query)
+        assert (
+            "Order 'badkey': 'badkey' does not exist in model "
+            "<class 'anyblok.model.factory.ModelSystemBlok'>." in
+            request.errors.messages)
+
+    def test_querystring_from_limit(self, registry_blok):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        qs = QueryString(request, model)
+        qs.limit = 1
+        Q = qs.from_limit(query)
+        assert len(Q.all()) == 1
+
+    def test_querystring_from_limit_without_limit(self, registry_blok):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        qs = QueryString(request, model)
+        qs.limit = None
+        Q = qs.from_limit(query)
+        assert len(Q.all()) == len(query.all())
+
+    def test_querystring_from_offset(self, registry_blok):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        qs = QueryString(request, model)
+        qs.offset = 3
+        Q = qs.from_offset(query)
+        assert len(Q.all()) == len(query.offset(3).all())
+
+    def test_querystring_from_offset_without_offset(self, registry_blok):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        qs = QueryString(request, model)
+        qs.offset = None
+        Q = qs.from_offset(query)
+        assert len(Q.all()) == len(query.all())
+
+    def test_querystring_get_model_and_key_from_relationship_1(self,
+                                                               registry_blok):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        qs = QueryString(request, model)
+        res = qs.get_model_and_key_from_relationship(query, model, ['name'])
+        assert res[1] is model
+        assert res[2] == 'name'
+
+    def test_querystring_get_model_and_key_from_relationship_4(self,
+                                                               registry_blok):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Column
+        query = model.query()
+        qs = QueryString(request, model)
+        res = qs.get_model_and_key_from_relationship(
+            query, model, ['model', 'name'])
+        assert (
+            "'model' in model "
+            "<class 'anyblok.model.factory.ModelSystemColumn'> is not "
+            "a relationship." == res)
+
+    def test_has_no_tag(self, registry_blok):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        qs = QueryString(request, model)
+        assert not (qs.has_tag('unknown.tag'))
+
+
+@pytest.fixture(scope="class")
+def registry_blok_with_integer(request, bloks_loaded):
+    registry = init_registry_with_bloks([], add_integer_class)
+    request.addfinalizer(registry.close)
+    return registry
+
+
+class TestQueryStringOnInteger:
+
+    @pytest.fixture(autouse=True)
+    def transact(self, request, registry_blok_with_integer):
+        transaction = registry_blok_with_integer.begin_nested()
+        request.addfinalizer(transaction.rollback)
+        return
+
+    def test_querystring_update_filter_lt(self, registry_blok_with_integer):
+        registry = registry_blok_with_integer
+        request = MockRequest(self)
+        model = registry.Exemple
+        query = model.query()
+        key = 'number'
+        op = 'lt'
+        value = 10
+        qs = QueryString(request, model)
+        Q = query.filter(qs.update_filter(model, key, op, value))
+        assert len(Q.all()) == 0
+        model.insert(number=9)
+        assert len(Q.all()) == 1
+        model.insert(number=10)
+        assert len(Q.all()) == 1
+        model.insert(number=11)
+        assert len(Q.all()) == 1
+
+    def test_querystring_update_filter_lte(self, registry_blok_with_integer):
+        registry = registry_blok_with_integer
+        request = MockRequest(self)
+        model = registry.Exemple
+        query = model.query()
+        key = 'number'
+        op = 'lte'
+        value = 10
+        qs = QueryString(request, model)
+        Q = query.filter(qs.update_filter(model, key, op, value))
+        assert len(Q.all()) == 0
+        model.insert(number=9)
+        assert len(Q.all()) == 1
+        model.insert(number=10)
+        assert len(Q.all()) == 2
+        model.insert(number=11)
+        assert len(Q.all()) == 2
+
+    def test_querystring_update_filter_gt(self, registry_blok_with_integer):
+        registry = registry_blok_with_integer
+        request = MockRequest(self)
+        model = registry.Exemple
+        query = model.query()
+        key = 'number'
+        op = 'gt'
+        value = 10
+        qs = QueryString(request, model)
+        Q = query.filter(qs.update_filter(model, key, op, value))
+        assert len(Q.all()) == 0
+        model.insert(number=9)
+        assert len(Q.all()) == 0
+        model.insert(number=10)
+        assert len(Q.all()) == 0
+        model.insert(number=11)
+        assert len(Q.all()) == 1
+
+    def test_querystring_update_filter_gte(self, registry_blok_with_integer):
+        registry = registry_blok_with_integer
+        request = MockRequest(self)
+        model = registry.Exemple
+        query = model.query()
+        key = 'number'
+        op = 'gte'
+        value = 10
+        qs = QueryString(request, model)
+        Q = query.filter(qs.update_filter(model, key, op, value))
+        assert len(Q.all()) == 0
+        model.insert(number=9)
+        assert len(Q.all()) == 0
+        model.insert(number=10)
+        assert len(Q.all()) == 1
+        model.insert(number=11)
+        assert len(Q.all()) == 2
+
+
+@pytest.fixture(scope="class")
+def registry_blok_with_m2o(request, bloks_loaded):
+    registry = init_registry_with_bloks([], add_many2one_class)
+    request.addfinalizer(registry.close)
+    return registry
+
+
+class TestQueryStringWithM2O:
+
+    @pytest.fixture(autouse=True)
+    def transact(self, request, registry_blok_with_m2o):
+        transaction = registry_blok_with_m2o.begin_nested()
+        request.addfinalizer(transaction.rollback)
+        return
+
+    def test_querystring_from_filter_by_with_relationship(
+        self, registry_blok_with_m2o
+    ):
+        registry = registry_blok_with_m2o
+        request = MockRequest(self)
+        model = registry.Test2
+        query = model.query()
+        key = 'test.name'
+        op = 'eq'
+        value = 'test'
+        qs = QueryString(request, model)
+        qs.filter_by = [dict(key=key, op=op, value=value)]
+        Q = qs.from_filter_by(query)
+        assert len(Q.all()) == 0
+        t1 = registry.Test(name='test')
+        t2 = registry.Test(name='other')
+        model.insert(test=t1)
+        assert len(Q.all()) == 1
+        model.insert(test=t2)
+        assert len(Q.all()) == 1
+        model.insert(test=t2)
+        assert len(Q.all()) == 1
+        model.insert(test=t1)
+        assert len(Q.all()) == 2
+
+    def test_querystring_from_filter_by_with_relationship_bad_key(
+        self, registry_blok_with_m2o
+    ):
+        registry = registry_blok_with_m2o
         request = MockRequest(self)
         model = registry.Test2
         query = model.query()
@@ -331,38 +503,15 @@ class TestQueryString(DBTestCase):
         qs = QueryString(request, model)
         qs.filter_by = [dict(key=key, op=op, value=value)]
         qs.from_filter_by(query)
-        self.assertIn("Filter 'test.badkey': 'badkey' does not exist in model "
-                      "<class 'anyblok.model.factory.ModelTest'>.",
-                      request.errors.messages)
+        assert (
+            "Filter 'test.badkey': 'badkey' does not exist in model "
+            "<class 'anyblok.model.factory.ModelTest'>." in
+            request.errors.messages)
 
-    def test_querystring_from_order_by_ok(self):
-        registry = self.init_registry(None)
-        request = MockRequest(self)
-        model = registry.System.Blok
-        query = model.query()
-        key = 'name'
-        op = 'asc'
-        qs = QueryString(request, model)
-        qs.order_by = [dict(key=key, op=op)]
-        Q = qs.from_order_by(query)
-        self.assertEqual(
-            Q.all().name,
-            query.order_by(model.name.asc()).all().name)
-
-    def test_querystring_from_order_by_without_key(self):
-        registry = self.init_registry(None)
-        request = MockRequest(self)
-        model = registry.System.Blok
-        query = model.query()
-        key = None
-        op = 'asc'
-        qs = QueryString(request, model)
-        qs.order_by = [dict(key=key, op=op)]
-        qs.from_order_by(query)
-        self.assertEqual(len(request.errors.messages), 1)
-
-    def test_querystring_from_order_by_ok_with_relationship(self):
-        registry = self.init_registry(add_many2one_class)
+    def test_querystring_from_order_by_ok_with_relationship(
+        self, registry_blok_with_m2o
+    ):
+        registry = registry_blok_with_m2o
         request = MockRequest(self)
         model = registry.Test2
         query = model.query()
@@ -379,37 +528,12 @@ class TestQueryString(DBTestCase):
         model.insert(test=t1)
         query = query.join(registry.Test2.test)
         query = query.order_by(registry.Test.name.asc())
-        self.assertEqual(Q.all(), query.all())
+        assert Q.all() == query.all()
 
-    def test_querystring_from_order_by_ko_bad_op(self):
-        registry = self.init_registry(None)
-        request = MockRequest(self)
-        model = registry.System.Blok
-        query = model.query()
-        key = 'name'
-        op = 'unknown'
-        qs = QueryString(request, model)
-        qs.order_by = [dict(key=key, op=op)]
-        qs.from_order_by(query)
-        self.assertIn("ORDER_by operator 'unknown' does not exist.",
-                      request.errors.messages)
-
-    def test_querystring_from_order_by_bad_key(self):
-        registry = self.init_registry(None)
-        request = MockRequest(self)
-        model = registry.System.Blok
-        query = model.query()
-        key = 'badkey'
-        op = 'asc'
-        qs = QueryString(request, model)
-        qs.order_by = [dict(key=key, op=op)]
-        qs.from_order_by(query)
-        self.assertIn("Order 'badkey': 'badkey' does not exist in model "
-                      "<class 'anyblok.model.factory.ModelSystemBlok'>.",
-                      request.errors.messages)
-
-    def test_querystring_from_order_by_bad_key_relationship(self):
-        registry = self.init_registry(add_many2one_class)
+    def test_querystring_from_order_by_bad_key_relationship(
+        self, registry_blok_with_m2o
+    ):
+        registry = registry_blok_with_m2o
         request = MockRequest(self)
         model = registry.Test2
         query = model.query()
@@ -418,125 +542,64 @@ class TestQueryString(DBTestCase):
         qs = QueryString(request, model)
         qs.order_by = [dict(key=key, op=op)]
         qs.from_order_by(query)
-        self.assertIn("Order 'test.badkey': 'badkey' does not exist in model "
-                      "<class 'anyblok.model.factory.ModelTest'>.",
-                      request.errors.messages)
+        assert (
+            "Order 'test.badkey': 'badkey' does not exist in model "
+            "<class 'anyblok.model.factory.ModelTest'>." in
+            request.errors.messages)
 
-    def test_querystring_from_limit(self):
-        registry = self.init_registry(None)
-        request = MockRequest(self)
-        model = registry.System.Blok
-        query = model.query()
-        qs = QueryString(request, model)
-        qs.limit = 1
-        Q = qs.from_limit(query)
-        self.assertEqual(len(Q.all()), 1)
-
-    def test_querystring_from_limit_without_limit(self):
-        registry = self.init_registry(None)
-        request = MockRequest(self)
-        model = registry.System.Blok
-        query = model.query()
-        qs = QueryString(request, model)
-        qs.limit = None
-        Q = qs.from_limit(query)
-        self.assertEqual(len(Q.all()), len(query.all()))
-
-    def test_querystring_from_offset(self):
-        registry = self.init_registry(None)
-        request = MockRequest(self)
-        model = registry.System.Blok
-        query = model.query()
-        qs = QueryString(request, model)
-        qs.offset = 3
-        Q = qs.from_offset(query)
-        self.assertEqual(len(Q.all()), len(query.offset(3).all()))
-
-    def test_querystring_from_offset_without_offset(self):
-        registry = self.init_registry(None)
-        request = MockRequest(self)
-        model = registry.System.Blok
-        query = model.query()
-        qs = QueryString(request, model)
-        qs.offset = None
-        Q = qs.from_offset(query)
-        self.assertEqual(len(Q.all()), len(query.all()))
-
-    def test_querystring_get_remote_model_for(self):
-        registry = self.init_registry(add_many2one_class)
+    def test_querystring_get_remote_model_for(
+        self, registry_blok_with_m2o
+    ):
+        registry = registry_blok_with_m2o
         request = MockRequest(self)
         model = registry.System.Blok
         qs = QueryString(request, model)
         Model = qs.get_remote_model_for(registry.Test2, 'test')
-        self.assertIs(Model, registry.Test)
+        assert Model is registry.Test
 
-    def test_querystring_get_remote_model_for_without_relationship(self):
-        registry = self.init_registry(add_many2one_class)
+    def test_querystring_get_remote_model_for_without_relationship(
+        self, registry_blok_with_m2o
+    ):
+        registry = registry_blok_with_m2o
         request = MockRequest(self)
         model = registry.System.Blok
         qs = QueryString(request, model)
         Model = qs.get_remote_model_for(registry.Test, 'name')
-        self.assertIsNone(Model)
+        assert Model is None
 
-    def test_querystring_get_remote_model_for_unknown(self):
-        registry = self.init_registry(add_many2one_class)
+    def test_querystring_get_remote_model_for_unknown(
+        self, registry_blok_with_m2o
+    ):
+        registry = registry_blok_with_m2o
         request = MockRequest(self)
         model = registry.System.Blok
         qs = QueryString(request, model)
         Model = qs.get_remote_model_for(registry.Test, 'test')
-        self.assertIsNone(Model)
+        assert Model is None
 
-    def test_querystring_get_model_and_key_from_relationship_1(self):
-        registry = self.init_registry(None)
-        request = MockRequest(self)
-        model = registry.System.Blok
-        query = model.query()
-        qs = QueryString(request, model)
-        res = qs.get_model_and_key_from_relationship(query, model, ['name'])
-        self.assertIs(res[1], model)
-        self.assertEqual(res[2], 'name')
-
-    def test_querystring_get_model_and_key_from_relationship_2(self):
-        registry = self.init_registry(add_many2one_class)
+    def test_querystring_get_model_and_key_from_relationship_2(
+        self, registry_blok_with_m2o
+    ):
+        registry = registry_blok_with_m2o
         request = MockRequest(self)
         model = registry.Test2
         query = model.query()
         qs = QueryString(request, model)
         res = qs.get_model_and_key_from_relationship(
             query, model, ['test', 'name'])
-        self.assertIs(res[1], registry.Test)
-        self.assertEqual(res[2], 'name')
+        assert res[1] is registry.Test
+        assert res[2] == 'name'
 
-    def test_querystring_get_model_and_key_from_relationship_3(self):
-        registry = self.init_registry(add_many2one_class)
+    def test_querystring_get_model_and_key_from_relationship_3(
+        self, registry_blok_with_m2o
+    ):
+        registry = registry_blok_with_m2o
         request = MockRequest(self)
         model = registry.Test2
         query = model.query()
         qs = QueryString(request, model)
         res = qs.get_model_and_key_from_relationship(
             query, model, ['test', 'number'])
-        self.assertEqual(
-            res,
-            "'number' does not exist in model <class 'anyblok.model.factory."
-            "ModelTest'>.")
-
-    def test_querystring_get_model_and_key_from_relationship_4(self):
-        registry = self.init_registry(None)
-        request = MockRequest(self)
-        model = registry.System.Column
-        query = model.query()
-        qs = QueryString(request, model)
-        res = qs.get_model_and_key_from_relationship(
-            query, model, ['model', 'name'])
-        self.assertEqual(
-            "'model' in model "
-            "<class 'anyblok.model.factory.ModelSystemColumn'> is not "
-            "a relationship.",
-            res)
-
-    def test_has_no_tag(self):
-        registry = self.init_registry(None)
-        request = MockRequest(self)
-        model = registry.System.Blok
-        qs = QueryString(request, model)
-        self.assertFalse(qs.has_tag('unknown.tag'))
+        waiting = ("'number' does not exist in model <class 'anyblok.model."
+                   "factory.ModelTest'>.")
+        assert res == waiting

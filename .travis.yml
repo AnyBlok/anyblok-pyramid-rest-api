@@ -34,7 +34,7 @@ install:
   - pip install passlib
   - pip install flake8
   - pip install coverage
-  - pip install nose
+  - pip install flake8 coverage pytest pytest-cov
   - pip install WebTest
   - pip install coveralls
   - python setup.py develop
@@ -48,7 +48,7 @@ env:
 script:
   - flake8 anyblok_pyramid_rest_api --ignore F999
   - psql -c 'create database travis_ci_test;' -U postgres
-  - nosetests anyblok_pyramid_rest_api/tests -v -s --with-coverage --cover-package=anyblok_pyramid_rest_api
-  
+  - py.test --cov-report= --cov=anyblok_pyramid_rest_api anyblok_pyramid_rest_api/tests
+
 after_success:
-  coveralls
+  coveralls --data_file=.coverage --config_file=.coveragerc
