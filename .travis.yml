@@ -35,8 +35,8 @@ install:
   - pip install flake8
   - pip install coverage
   - pip install flake8 coverage pytest pytest-cov
+  - pip install python-coveralls
   - pip install WebTest
-  - pip install coveralls
   - python setup.py develop
 
 env:
@@ -48,7 +48,7 @@ env:
 script:
   - flake8 anyblok_pyramid_rest_api --ignore F999
   - psql -c 'create database travis_ci_test;' -U postgres
-  - py.test --cov-report= --cov=anyblok_pyramid_rest_api anyblok_pyramid_rest_api/tests
+  - py.test anyblok_pyramid_rest_api/tests
 
 after_success:
-  coveralls --data_file=.coverage --config_file=.coveragerc
+  coveralls
