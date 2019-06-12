@@ -2,10 +2,14 @@
 ..
 ..    Copyright (C) 2017 Franck BRET <franckbret@gmail.com>
 ..    Copyright (C) 2017 Jean-Sebastien SUZANNE <jssuzanne@anybox.fr>
+..    Copyright (C) 2019 Jean-Sebastien SUZANNE <js.suzanne@gmail.com>
 ..
 .. This Source Code Form is subject to the terms of the Mozilla Public License,
 .. v. 2.0. If a copy of the MPL was not distributed with this file,You can
 .. obtain one at http://mozilla.org/MPL/2.0/.
+
+.. image:: https://img.shields.io/pypi/pyversions/anyblok_pyramid_rest_api.svg?longCache=True
+    :alt: Python versions
 
 .. image:: https://travis-ci.org/AnyBlok/anyblok-pyramid-rest-api.svg?branch=master
     :target: https://travis-ci.org/AnyBlok/anyblok-pyramid-rest-api
@@ -71,9 +75,21 @@ request.validated ::
 Author
 ------
 
-Franck Bret 
-franckbret@gmail.com
-https://github.com/franckbret
+Franck Bret
+~~~~~~~~~~~
+
+* franckbret@gmail.com
+* https://github.com/franckbret
+
+Contributors
+------------
+
+Jean-Sébastien Suzanne
+~~~~~~~~~~~~~~~~~~~~~~
+
+* js.suzanne@gmail.com
+* https://github.com/jssuzanne
+* https://github.com/AnyBlok
 
 Credits
 -------

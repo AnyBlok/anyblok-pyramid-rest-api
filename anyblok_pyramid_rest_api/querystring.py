@@ -129,6 +129,7 @@ class QueryString:
         return query
 
     def from_tags(self, query):
+        grouped_tags = {}
         for tag in self.tags:
             if self.has_tag(tag):
                 try:
@@ -141,6 +142,12 @@ class QueryString:
                     )
                     self.request.errors.status = 400
                     logger.exception(str(e))
+            elif self.has_grouped_tag(tag):
+                grouped_tag = self.get_grouped_tag_for(tag)
+                if grouped_tag not in grouped_tags:
+                    grouped_tags[grouped_tag] = []
+
+                grouped_tags[grouped_tag].append(tag)
             else:
                 self.request.errors.add(
                     'querystring',
@@ -148,6 +155,19 @@ class QueryString:
                     "Unexisting tag"
                 )
                 self.request.errors.status = 400
+
+        for grouped_tag in grouped_tags:
+            try:
+                query = self.from_grouped_tags(
+                    query, grouped_tag, grouped_tags[grouped_tag])
+            except Exception as e:
+                self.request.errors.add(
+                    'querystring',
+                    "Tag %r" % tag,
+                    str(e)
+                )
+                self.request.errors.status = 400
+                logger.exception(str(e))
 
         return query
 
@@ -157,8 +177,20 @@ class QueryString:
 
         return self.adapter.has_tag_for(tag)
 
+    def has_grouped_tag(self, tag):
+        if self.adapter is None:
+            return False
+
+        return self.adapter.has_grouped_tag_for(tag)
+
+    def get_grouped_tag_for(self, tag):
+        return self.adapter.group_by_tags[tag]
+
     def from_tag(self, query, tag):
         return self.adapter.get_tag_for(tag)(self, query)
+
+    def from_grouped_tags(self, query, group, tags):
+        return self.adapter.get_grouped_tag_for(group)(self, query, tags)
 
     def from_order_by(self, query):
         for item in self.order_by:

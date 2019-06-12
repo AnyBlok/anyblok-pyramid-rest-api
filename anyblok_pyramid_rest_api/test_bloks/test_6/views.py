@@ -35,9 +35,11 @@ class CustomerResourceV6(CrudResource):
             return query
 
         @Adapter.tag('green')
-        def tag_is_green(self, querystring, query):
+        @Adapter.tag('blue')
+        @Adapter.grouped_tag('color')
+        def tag_is_green(self, querystring, query, tags):
             query = query.join(self.registry.Customer.tags, aliased=True)
-            query = query.filter(self.registry.Tag.name == 'green')
+            query = query.filter(self.registry.Tag.name.in_(tags))
             return query
 
         @Adapter.tag('orange')

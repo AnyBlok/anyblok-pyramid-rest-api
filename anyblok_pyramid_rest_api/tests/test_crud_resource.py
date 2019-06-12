@@ -526,12 +526,13 @@ class CrudResourceAdapter:
     def create_adapter_customers(self):
         self.create_customer()
         self.create_customer(name="robert", tag_name="orange", zipcode="001")
+        self.create_customer(name="paul", tag_name="blue", zipcode="002")
 
     def test_adapter_get_all_without_tag_or_custom_filter(self):
         self.create_adapter_customers()
         response = self.webserver.get(self.collection_path)
         assert response.status_code == 200
-        assert len(response.json_body) == 2
+        assert len(response.json_body) == 3
 
     def test_adapter_tag(self):
         self.create_adapter_customers()
@@ -576,6 +577,13 @@ class CrudResourceAdapter:
         assert response.status_code == 200
         assert len(response.json_body) == 1
         assert response.json_body[0].get('name') == "robert"
+
+    def test_adapter_tags_4(self):
+        self.create_adapter_customers()
+        path = self.collection_path + "?tags=green,blue"
+        response = self.webserver.get(path)
+        assert response.status_code == 200
+        assert len(response.json_body) == 2
 
     def test_adapter_tags_and_context_1(self):
         self.create_adapter_customers()

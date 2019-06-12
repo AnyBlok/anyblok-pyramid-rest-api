@@ -4,6 +4,25 @@ Change Log
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+0.5.0
+-----
+
+Refactored
+~~~~~~~~~~
+
+* Tag can now be grouped
+
+  ::
+
+      @Adapter.tag('green')
+      @Adapter.tag('blue')
+      @Adapter.grouped_tag('color')
+      def tag_is_green_or_blue(self, querystring, query, tags):
+          query = query.join(self.registry.Customer.tags, aliased=True)
+          query = query.filter(self.registry.Tag.name.in_(tags))
+          return query
+
+
 0.4.0 (2019-01-03)
 ------------------
 
@@ -39,9 +58,6 @@ Added
   - collection_put
   - collection_patch
   - collection_delete
-
-
-
 
 Refactored
 ~~~~~~~~~~
