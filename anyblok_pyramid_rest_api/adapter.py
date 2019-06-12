@@ -21,9 +21,8 @@ class Adapter:
         self.loaded = False
         self.filters = {}
         self.orders_by = {}
-        self.tags = {}
+        self._tags = {}
         self.grouped_tags = {}
-        self.group_by_tags = {}
 
     def load_decorators(self):
         for attr, value in self.__class__.__dict__.items():
@@ -33,11 +32,10 @@ class Adapter:
             elif hasattr(value, 'is_order_by'):
                 self.orders_by[value.is_order_by] = attr
             elif hasattr(value, 'is_tag'):
-                self.tags[value.is_tag] = attr
-            elif hasattr(value, 'is_grouped_tag'):
-                self.grouped_tags[value.is_grouped_tag['name']] = attr
-                for tag in value.is_grouped_tag['tags']:
-                    self.group_by_tags[tag] = value.is_grouped_tag['name']
+                self._tags[value.is_tag] = attr
+            elif hasattr(value, 'is_tags'):
+                for tag in value.is_tags:
+                    self.grouped_tags[tag] = attr
 
     def has_filter_for(self, key, operator):
         return True if self.filters.get(key, {}).get(operator) else False
@@ -52,16 +50,16 @@ class Adapter:
         return getattr(self, self.orders_by[key])
 
     def has_tag_for(self, tag):
-        return True if self.tags.get(tag) else False
+        return True if self._tags.get(tag) else False
 
     def has_grouped_tag_for(self, tag):
-        return True if self.group_by_tags.get(tag) else False
+        return True if self.grouped_tags.get(tag) else False
 
     def get_tag_for(self, tag):
-        return getattr(self, self.tags[tag])
+        return getattr(self, self._tags[tag])
 
     def get_grouped_tag_for(self, group):
-        return getattr(self, self.grouped_tags[group])
+        return getattr(self, group)
 
     @classmethod
     def filter(cls, key, operators):
@@ -85,18 +83,15 @@ class Adapter:
     @classmethod
     def tag(cls, name):
         def wrapper(method):
-            if hasattr(method, 'is_grouped_tag'):
-                method.is_grouped_tag['tags'].append(name)
-            else:
-                method.is_tag = name
+            method.is_tag = name
             return method
 
         return wrapper
 
     @classmethod
-    def grouped_tag(cls, name):
+    def tags(cls, *names):
         def wrapper(method):
-            method.is_grouped_tag = {'name': name, 'tags': []}
+            method.is_tags = names
             return method
 
         return wrapper

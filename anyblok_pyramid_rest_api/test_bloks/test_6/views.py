@@ -34,9 +34,7 @@ class CustomerResourceV6(CrudResource):
                 self.registry.City.zipcode.ilike(value)))
             return query
 
-        @Adapter.tag('green')
-        @Adapter.tag('blue')
-        @Adapter.grouped_tag('color')
+        @Adapter.tags('green', 'blue')
         def tag_is_green(self, querystring, query, tags):
             query = query.join(self.registry.Customer.tags, aliased=True)
             query = query.filter(self.registry.Tag.name.in_(tags))

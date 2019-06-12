@@ -184,7 +184,7 @@ class QueryString:
         return self.adapter.has_grouped_tag_for(tag)
 
     def get_grouped_tag_for(self, tag):
-        return self.adapter.group_by_tags[tag]
+        return self.adapter.grouped_tags[tag]
 
     def from_tag(self, query, tag):
         return self.adapter.get_tag_for(tag)(self, query)
