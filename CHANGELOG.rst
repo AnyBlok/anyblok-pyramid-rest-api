@@ -22,6 +22,9 @@ Refactored
           query = query.filter(self.registry.Tag.name.in_(tags))
           return query
 
+* ``adapter_cls`` is renamed ``QueryStringAdapter``. the compatibility is keeped and 
+  a DeprecationWarning is sent
+
 
 0.4.0 (2019-01-03)
 ------------------

@@ -22,7 +22,7 @@ class CustomerResourceV6(CrudResource):
     model = 'Model.Customer'
     default_schema = CustomerSchema
 
-    class adapter_cls(Adapter):
+    class QueryStringAdapter(Adapter):
 
         @Adapter.filter('addresses.city', ['ilike'])
         def filter_by_location_and_children(self, querystring, query, operator,

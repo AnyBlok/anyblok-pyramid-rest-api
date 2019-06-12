@@ -8,6 +8,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
+import warnings
 from anyblok_marshmallow import SchemaWrapper
 from cornice.resource import view as cornice_view, add_resource, add_view
 from cornice import Service
@@ -323,7 +324,7 @@ class CrudResource:
         class MyResource(CrudResource):
             ...
 
-            class adapter_cls(Adapter):
+            class QueryStringAdapter(Adapter):
                 # See the adapter definition
 
     Some http post action can be added with the decorator execute::
@@ -350,7 +351,8 @@ class CrudResource:
     """
 
     model = None
-    adapter_cls = None
+    adapter_cls = None  # keep compatibility prefere QueryStringAdapter
+    QueryStringAdapter = None
     cache_default_schema = True  # TODO
     has_collection_get = True
     has_collection_post = True
@@ -366,8 +368,16 @@ class CrudResource:
         self.request = request
         self.registry = self.request.anyblok.registry
         self.adapter = None
+        # keep compatibility with version <= 0.4.0
+        QueryStringAdapter = self.QueryStringAdapter or self.adapter_cls
         if self.adapter_cls:
-            self.adapter = self.adapter_cls(
+            warnings.warn(
+                "In %r the attribute 'adapter_cls' must be renamed "
+                "'QueryStringAdapter'" % self.__class__,
+                DeprecationWarning)
+
+        if QueryStringAdapter:
+            self.adapter = QueryStringAdapter(
                 self.registry,
                 Model=self.get_model('collection_get'))
             self.adapter.load_decorators()

@@ -76,5 +76,5 @@ class CustomerAdapter(Adapter):
 )
 class CustomerResourceV4(CrudResource):
     model = 'Model.Customer'
-    adapter_cls = CustomerAdapter
+    QueryStringAdapter = CustomerAdapter
     default_schema = CustomerSchema
