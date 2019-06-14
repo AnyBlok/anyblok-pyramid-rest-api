@@ -15,7 +15,13 @@ logger = getLogger(__name__)
 
 
 class QueryString:
+    """Parse the validated querystring from the request to generate a
+    SQLAlchemy query
 
+    :param request: validated request from pyramid
+    :param Model: AnyBlok Model, use to create the query
+    :param adapter: Adapter to help to generate query on some filter of tags
+    """
     def __init__(self, request, Model, adapter=None):
         self.request = request
         self.adapter = adapter

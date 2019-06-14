@@ -11,15 +11,17 @@ from marshmallow import Schema, fields
 
 class FullRequestSchema(Schema):
     """A base marshmallow schema to validate the entire request
-    :Example:
-        >>> from marshmallow import Schema, fields
-        >>> from anyblok_pyramid_rest_api.schema import FullRequestSchema
-        >>> class ModelSchema(Schema):
-        >>>     id = fields.Int(required=True)
-        >>>     name = fields.Str(required=True)
-        >>> class RequestModelSchema(FullRequestSchema):
-        >>>     body = fields.Nested(ModelSchema(partial=('id',)))
-        >>>     path = fields.Nested(ModelSchema(partial=('name',)))
+    Example::
+
+        from marshmallow import Schema, fields
+        from anyblok_pyramid_rest_api.schema import FullRequestSchema
+        class ModelSchema(Schema):
+            id = fields.Int(required=True)
+            name = fields.Str(required=True)
+        class RequestModelSchema(FullRequestSchema):
+            body = fields.Nested(ModelSchema(partial=('id',)))
+            path = fields.Nested(ModelSchema(partial=('name',)))
+
     """
     body = fields.Dict()
     url = fields.Str()

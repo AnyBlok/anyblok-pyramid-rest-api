@@ -230,93 +230,109 @@ class CrudResource:
 
     This action create view to acces on the AnyBlok Model (MyModel):
 
-    * collection_get: validate the querystring, serialize the output
-    * collection_post: deserialize the body input, serialize the output
-    * collection_put: validate the querystring, serialize the output
-    * get: validate the path, deserialize the body, serialize the output
-    * patch: validate the path, deserialize the body, serialize the output
-    * put: validate the path, deserialize the body, serialize the output
-    * delete: validate the path
+    * ``collection_get``: validate the querystring, serialize the output
+    * ``collection_post``: deserialize the body input, serialize the output
+    * ``collection_put``: validate the querystring, serialize the output
+    * ``get``: validate the path, deserialize the body, serialize the output
+    * ``patch``: validate the path, deserialize the body, serialize the output
+    * ``put``: validate the path, deserialize the body, serialize the output
+    * ``delete``: validate the path
 
     The Serialization and Deserialization is done by the MarshMallow Schema.
     By default the schema is created by AnyBlok MarshMallow, but the schema
     can be overwritten
 
     * deactivate some access
-      - has_collection_get: bool default True
-      - has_collection_post: bool default True
-      - has_collection_patch: bool default True
-      - has_collection_put: bool default True
-      - has_collection_delete: bool default True
-      - has_get: bool default True
-      - has_delete: bool default True
-      - has_patch: bool default True
-      - has_put: bool default True
+
+      - ``has_collection_get``: bool default True
+      - ``has_collection_post``: bool default True
+      - ``has_collection_patch``: bool default True
+      - ``has_collection_put``: bool default True
+      - ``has_collection_delete``: bool default True
+      - ``has_get``: bool default True
+      - ``has_delete``: bool default True
+      - ``has_patch``: bool default True
+      - ``has_put``: bool default True
+
     * get schema
-      - default_schema: classmethod of AnyBlokMarshmallow schema, by default use
-        model to defined it
+
+      - ``default_schema``: classmethod of AnyBlokMarshmallow schema, by
+        default use model to defined it
+
     * get serialize schema
-      - default_serialize_schema: method of AnyBlokMarshmallow schema, by
+
+      - ``default_serialize_schema``: method of AnyBlokMarshmallow schema, by
         default use default_schema
-      - serialize_collection_get: method of AnyBlokMarshmallow schema,
-                                  by default use default_serialize_schema
-      - serialize_collection_post: method of AnyBlokMarshmallow schema
-                                   by default use default_serialize_schema
-      - serialize_collection_patch: method of AnyBlokMarshmallow schema
-                                    by default use default_serialize_schema
-      - serialize_collection_put: method of AnyBlokMarshmallow schema
-                                  by default use default_serialize_schema
-      - serialize_collection_delete: method of AnyBlokMarshmallow schema
-                                     by default use default_serialize_schema
-      - serialize_get: method of AnyBlokMarshmallow schema, by default use
-                       default_serialize_schema
-      - serialize_delete: method of AnyBlokMarshmallow schema, by default use
-                          default_serialize_schema
-      - serialize_patch: method of AnyBlokMarshmallow schema, by default use
-                         default_serialize_schema
-      - serialize_put: method of AnyBlokMarshmallow schema, by default use
-                       default_serialize_schema
+      - ``serialize_collection_get``: method of AnyBlokMarshmallow schema,
+        by default use default_serialize_schema
+      - ``serialize_collection_post``: method of AnyBlokMarshmallow schema
+        by default use default_serialize_schema
+      - ``serialize_collection_patch``: method of AnyBlokMarshmallow schema
+        by default use default_serialize_schema
+      - ``serialize_collection_put``: method of AnyBlokMarshmallow schema
+        by default use default_serialize_schema
+      - ``serialize_collection_delete``: method of AnyBlokMarshmallow schema
+        by default use default_serialize_schema
+      - ``serialize_get``: method of AnyBlokMarshmallow schema, by default use
+        default_serialize_schema
+      - ``serialize_delete``: method of AnyBlokMarshmallow schema, by default
+        use default_serialize_schema
+      - ``serialize_patch``: method of AnyBlokMarshmallow schema, by default
+        use default_serialize_schema
+      - ``serialize_put``: method of AnyBlokMarshmallow schema, by default use
+        default_serialize_schema
+
     * get serialize opts
-      - get_serialize_opts: method return dict of option to use
+
+      - ``get_serialize_opts``: method return dict of option to use
+
     * get deserialize schema
-      - default_deserialize_schema: method of AnyBlokMarshmallow schema, by
-                                    default use default_schema
-      - deserialize_collection_post: method of AnyBlokMarshmallow schema,
-                                     by default use default_deserialize_schema
-      - deserialize_collection_patch: method of AnyBlokMarshmallow schema,
-                                      by default use default_deserialize_schema
-      - deserialize_collection_put: method of AnyBlokMarshmallow schema,
-                                    by default use default_deserialize_schema
-      - deserialize_collection_delete: method of AnyBlokMarshmallow schema,
-                                       by default use default_deserialize_schema
-      - deserialize_patch: method of AnyBlokMarshmallow schema,
-                           by default use default_deserialize_schema
-      - deserialize_put: method of AnyBlokMarshmallow schema,
-                         by default use default_deserialize_schema
+
+      - ``default_deserialize_schema``: method of AnyBlokMarshmallow schema, by
+        default use default_schema
+      - ``deserialize_collection_post``: method of AnyBlokMarshmallow schema,
+        by default use default_deserialize_schema
+      - ``deserialize_collection_patch``: method of AnyBlokMarshmallow schema,
+        by default use default_deserialize_schema
+      - ``deserialize_collection_put``: method of AnyBlokMarshmallow schema,
+        by default use default_deserialize_schema
+      - ``deserialize_collection_delete``: method of AnyBlokMarshmallow schema,
+        by default use default_deserialize_schema
+      - ``deserialize_patch``: method of AnyBlokMarshmallow schema,
+        by default use default_deserialize_schema
+      - ``deserialize_put``: method of AnyBlokMarshmallow schema,
+        by default use default_deserialize_schema
+
     * get deserialize opts
-      - get_deserialize_opts: method return dict of option to use
+
+      - ``get_deserialize_opts``: method return dict of option to use
+
     * get path schema
-      - default_path_schema: method of AnyBlokMarshmallow schema, by default use
-                             default_schema
-      - path_get: method of AnyBlokMarshmallow schema, by default use
-                  default_serialize_schema
-      - path_delete: method of AnyBlokMarshmallow schema, by default use
-                     default_serialize_schema
-      - path_patch: method of AnyBlokMarshmallow schema, by default use
-                    default_serialize_schema
-      - path_put: method of AnyBlokMarshmallow schema, by default use
-                  default_serialize_schema
-      - path_execute: method of AnyBlokMarshmallow schema, by default use
-                      default_serialize_schema
+
+      - ``default_path_schema``: method of AnyBlokMarshmallow schema, by
+        default use default_schema
+      - ``path_get``: method of AnyBlokMarshmallow schema, by default use
+        default_serialize_schema
+      - ``path_delete``: method of AnyBlokMarshmallow schema, by default use
+        default_serialize_schema
+      - ``path_patch``: method of AnyBlokMarshmallow schema, by default use
+        default_serialize_schema
+      - ``path_put``: method of AnyBlokMarshmallow schema, by default use
+        default_serialize_schema
+      - ``path_execute``: method of AnyBlokMarshmallow schema, by default use
+        default_serialize_schema
+
     * get path opts
+
       - get_path_opts: method return dict of option to use
-    * update_collection_get_filter: method to improve query to filter
-    * create
-    * update
-    * collection_update
-    * delete_entry
-    * delete_entries
-    * get_model_name:
+
+    * ``update_collection_get_filter``: method to improve query to filter
+    * ``create``
+    * ``update``
+    * ``collection_update``
+    * ``delete_entry``
+    * ``delete_entries``
+    * ``get_model_name``:
 
     You can update the querystring to add an adapter in the resource::
 
