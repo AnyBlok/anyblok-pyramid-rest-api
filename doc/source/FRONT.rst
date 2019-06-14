@@ -73,6 +73,14 @@ Contributing (hackers needed!)
 Anyblok / Pyramid is at a very early stage, feel free to fork, talk with core
 dev, and spread the word!
 
+License
+-------
+
+-This Source Code Form is subject to the terms of the Mozilla Public License,
+-v. 2.0. If a copy of the MPL was not distributed with this file,You can
+-obtain one at http://mozilla.org/MPL/2.0/.
+-Copyright (c) 2017, Franck Bret
+
 Author
 ------
 
