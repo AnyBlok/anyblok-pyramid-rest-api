@@ -468,7 +468,7 @@ class CrudResourceSchema:
     def test_customer_collection_delete(self):
         """Customer DELETE /customers"""
         ex = self.create_customer()
-        path = self.collection_path + '?filter[id][eq]=%d' % ex.id
+        path = self.collection_path
 
         response = self.webserver.get(path)
         assert response.status_code == 200

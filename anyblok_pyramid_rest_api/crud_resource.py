@@ -228,6 +228,10 @@ class CrudResource:
         class MyResource(CrudResource):
             model = 'MyModel'
 
+    .. note::
+
+        All call based on the collection path waiting and return a list of entry
+
     This action create view to acces on the AnyBlok Model (MyModel):
 
     * ``collection_get``: validate the querystring, serialize the output
@@ -367,6 +371,7 @@ class CrudResource:
     """
 
     model = None
+    resource_name = None
     adapter_cls = None  # keep compatibility prefere QueryStringAdapter
     QueryStringAdapter = None
     cache_default_schema = True  # TODO
@@ -423,8 +428,9 @@ class CrudResource:
 
         userid = self.request.authenticated_userid
         if userid:
+            resource_name = self.resource_name or self.model_name()
             return self.registry.User.get_acl(
-                userid, self.model_name(), params=dict(self.request.matchdict)
+                userid, resource_name, params=dict(self.request.matchdict)
             )
 
         return [(Deny, Everyone, ALL_PERMISSIONS)]
