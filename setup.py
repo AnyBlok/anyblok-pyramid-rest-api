@@ -59,7 +59,7 @@ setup(
     long_description=readme + '\n\n' + changelog,
     author="Franck Bret",
     author_email='franckbret@gmail.com',
-    url='https://github.com/franckbret/anyblok-pyramid-rest-api',
+    url='https://github.com/AnyBlok/anyblok-pyramid-rest-api',
     packages=find_packages(),
     entry_points={
         'anyblok_pyramid.includeme': anyblok_pyramid_includeme,
