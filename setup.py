@@ -21,7 +21,7 @@ with open(join(here, 'README.rst'), 'r',
           encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
-with open(join(here, 'CHANGELOG.rst'), 'r',
+with open(join(here, 'CHANGELOG'), 'r',
           encoding='utf-8') as changelog_file:
     changelog = changelog_file.read()
 
