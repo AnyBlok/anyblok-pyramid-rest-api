@@ -10,6 +10,7 @@ import logging
 from copy import deepcopy
 import pytest
 from anyblok.blok import BlokManager
+from anyblok import load_init_function_from_entry_points
 from anyblok.config import Configuration
 from anyblok.environment import EnvironmentManager
 from anyblok.registry import RegistryManager
@@ -82,6 +83,8 @@ def drop_database(url):
 
 @pytest.fixture(scope="session")
 def base_loaded(request):
+    load_init_function_from_entry_points(unittest=True)
+    Configuration.load_config_for_test()
     url = Configuration.get('get_url')()
     if not database_exists(url):
         db_template_name = Configuration.get('db_template_name', None)

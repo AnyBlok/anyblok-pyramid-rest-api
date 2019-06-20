@@ -7,14 +7,9 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 # flake8: noqa
 from anyblok.config import Configuration
-from anyblok import (
-        load_init_function_from_entry_points,
-        configuration_post_load,
-)
+from anyblok import configuration_post_load
 
 
-load_init_function_from_entry_points(unittest=True)
-Configuration.load_config_for_test()
 
 
 class MockParser:
