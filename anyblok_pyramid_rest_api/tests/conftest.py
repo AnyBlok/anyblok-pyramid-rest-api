@@ -2,37 +2,15 @@
 #
 #    Copyright (C) 2018 Jean-Sebastien SUZANNE <jssuzanne@anybox.fr>
 #    Copyright (C) 2018 Denis VIVIÈS <dvivies@geoblink.com>
+#    Copyright (C) 2019 Jean-Sebastien SUZANNE <js.suzanne@gmail.com>
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
-import logging
 import pytest
 from anyblok.tests.conftest import *  # noqa
+from anyblok_pyramid.conftest import *  # noqa
 from anyblok.tests.conftest import init_registry_with_bloks
-
-
-logger = logging.getLogger(__name__)
-
-
-# Pyramid
-from webtest import TestApp  # noqa
-from anyblok_pyramid.pyramid_config import Configurator  # noqa
-
-
-@pytest.fixture(scope="class")
-def webserver(request):
-    config = Configurator()
-    config.include_from_entry_point()
-    # No param here # for includeme in self.includemes:
-    # No param here #     config.include(includeme)
-
-    config.load_config_bloks()
-    app = config.make_wsgi_app()
-    return TestApp(app)
-
-
-# rest api
 
 
 @pytest.fixture(scope="class")
