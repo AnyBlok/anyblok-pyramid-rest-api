@@ -455,11 +455,9 @@ class CrudResource:
                     allow_name += 'collection_'
 
         allow_name += self.request.method.lower()
+        allow = getattr(self, allow_name, False)
 
-        if (
-            getattr(self, allow_name, False)
-            or self.allow_unauthenticated_user_to_access_to_all_verbs
-        ):
+        if allow or self.allow_unauthenticated_user_to_access_to_all_verbs:
             return [(Allow, Everyone, ALL_PERMISSIONS)]
 
         Blok = self.registry.System.Blok
