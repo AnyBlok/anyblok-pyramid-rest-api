@@ -457,8 +457,8 @@ class CrudResource:
         allow_name += self.request.method.lower()
 
         if (
-            getattr(self, allow_name, False) or
-            self.allow_unauthenticated_user_to_access_to_all_verbs
+            getattr(self, allow_name, False)
+            or self.allow_unauthenticated_user_to_access_to_all_verbs
         ):
             return [(Allow, Everyone, ALL_PERMISSIONS)]
 
