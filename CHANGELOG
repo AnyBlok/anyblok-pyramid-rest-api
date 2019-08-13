@@ -12,6 +12,28 @@ Change Log
 All notable changes to this project will be documented in this file.
 This project adheres to `Semantic Versioning <http://semver.org/>`_.
 
+0.6.0
+-----
+
+Added
+~~~~~
+
+* CrudResource can now allow calls to certain http verb without being logged.
+  ::
+
+      * allow_unauthenticated_user_to_access_to_all_verbs
+      * allow_unauthenticated_user_to_access_to_collection_get
+      * allow_unauthenticated_user_to_access_to_collection_post
+      * allow_unauthenticated_user_to_access_to_collection_patch
+      * allow_unauthenticated_user_to_access_to_collection_put
+      * allow_unauthenticated_user_to_access_to_collection_delete
+      * allow_unauthenticated_user_to_access_to_get
+      * allow_unauthenticated_user_to_access_to_delete
+      * allow_unauthenticated_user_to_access_to_patch
+      * allow_unauthenticated_user_to_access_to_put
+
+
+
 0.5.0 (2019-06-21)
 ------------------
 

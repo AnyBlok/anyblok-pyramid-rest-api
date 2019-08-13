@@ -924,3 +924,12 @@ class TestCrudResourceModelSchemaValidatorAndAuth(CrudResourceSchema):
         cu = self.create_customer()
         self.webserver.post_json('/logout', {}, status=302)
         self.webserver.get(self.path % cu.id, status=403)
+
+    def test_allow_collection_get(self):
+        example = self.registry.Example.insert(name='test')
+        self.webserver.get('/examples', {}, status=200)
+        self.webserver.get('/examples2', {}, status=200)
+        self.webserver.post_json('/logout', {}, status=302)
+        self.webserver.get('/examples', {}, status=403)
+        self.webserver.get('/examples2', {}, status=200)
+        self.webserver.get('/examples2/%d' % example.id, {}, status=403)

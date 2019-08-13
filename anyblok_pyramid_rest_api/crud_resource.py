@@ -4,6 +4,7 @@
 #
 #    Copyright (C) 2017 Franck BRET <franckbret@gmail.com>
 #    Copyright (C) 2018 Jean-Sebastien SUZANNE <jssuzanne@anybox.fr>
+#    Copyright (C) 2019 Jean-Sebastien SUZANNE <js.suzanne@gmail.com>
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
@@ -232,6 +233,21 @@ class CrudResource:
 
         All call based on the collection path waiting and return a list of entry
 
+    By default, the user must be login to access to the resource. The
+    authorization is defined by the user. But In some case it possible to
+    define on the crud resource to allow everyone (default False)
+
+    * allow_unauthenticated_user_to_access_to_all_verbs
+    * allow_unauthenticated_user_to_access_to_collection_get
+    * allow_unauthenticated_user_to_access_to_collection_post
+    * allow_unauthenticated_user_to_access_to_collection_patch
+    * allow_unauthenticated_user_to_access_to_collection_put
+    * allow_unauthenticated_user_to_access_to_collection_delete
+    * allow_unauthenticated_user_to_access_to_get
+    * allow_unauthenticated_user_to_access_to_delete
+    * allow_unauthenticated_user_to_access_to_patch
+    * allow_unauthenticated_user_to_access_to_put
+
     This action create view to acces on the AnyBlok Model (MyModel):
 
     * ``collection_get``: validate the querystring, serialize the output
@@ -371,6 +387,16 @@ class CrudResource:
     """
 
     model = None
+    allow_unauthenticated_user_to_access_to_all_verbs = False
+    allow_unauthenticated_user_to_access_to_collection_get = False
+    allow_unauthenticated_user_to_access_to_collection_post = False
+    allow_unauthenticated_user_to_access_to_collection_patch = False
+    allow_unauthenticated_user_to_access_to_collection_put = False
+    allow_unauthenticated_user_to_access_to_collection_delete = False
+    allow_unauthenticated_user_to_access_to_get = False
+    allow_unauthenticated_user_to_access_to_delete = False
+    allow_unauthenticated_user_to_access_to_patch = False
+    allow_unauthenticated_user_to_access_to_put = False
     resource_name = None
     adapter_cls = None  # keep compatibility prefere QueryStringAdapter
     QueryStringAdapter = None
@@ -421,6 +447,20 @@ class CrudResource:
     def __acl__(self):
         if not hasattr(self, 'registry'):
             raise HTTPUnauthorized("ACL have not get AnyBlok registry")
+
+        allow_name = 'allow_unauthenticated_user_to_access_to_'
+        for name, service in self.__class__._services.items():
+            if service.path == self.request.path:
+                if name.startswith('collection_'):
+                    allow_name += 'collection_'
+
+        allow_name += self.request.method.lower()
+
+        if (
+            getattr(self, allow_name, False) or
+            self.allow_unauthenticated_user_to_access_to_all_verbs
+        ):
+            return [(Allow, Everyone, ALL_PERMISSIONS)]
 
         Blok = self.registry.System.Blok
         if not Blok.is_installed('auth'):

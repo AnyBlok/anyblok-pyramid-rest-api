@@ -51,7 +51,7 @@ def registry_rest_api_5(request, testbloks_loaded):
 @pytest.fixture(scope="class")
 def registry_rest_api_5_logged(request, testbloks_loaded):
     registry = init_registry_with_bloks(
-        ['test_rest_api_5', 'auth-password'], None)
+        ['test_rest_api_1', 'test_rest_api_5', 'auth-password'], None)
     request.addfinalizer(registry.close)
 
     registry.User.insert(
