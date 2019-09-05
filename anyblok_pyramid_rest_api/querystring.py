@@ -320,4 +320,4 @@ class QueryString:
 
             query = query.join(field, aliased=True, from_joinpoint=already_join)
             return self.get_model_and_key_from_relationship(
-                query, new_model, keys[1:], already_join=True)
+                query, new_model, keys[1:], already_join=already_join)

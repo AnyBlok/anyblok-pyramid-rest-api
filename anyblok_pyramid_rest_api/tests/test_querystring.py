@@ -37,6 +37,11 @@ def add_many2one_class():
         id = Integer(primary_key=True)
         test = Many2One(model=Declarations.Model.Test)
 
+    @Declarations.register(Declarations.Model)
+    class Test3:
+        id = Integer(primary_key=True)
+        test2 = Many2One(model=Declarations.Model.Test2)
+
 
 class MockRequestError:
 
@@ -603,3 +608,16 @@ class TestQueryStringWithM2O:
         waiting = ("'number' does not exist in model <class 'anyblok.model."
                    "factory.ModelTest'>.")
         assert res == waiting
+
+    def test_querystring_get_model_and_key_from_relationship_5(
+        self, registry_blok_with_m2o
+    ):
+        registry = registry_blok_with_m2o
+        request = MockRequest(self)
+        model = registry.Test3
+        query = model.query()
+        qs = QueryString(request, model)
+        res = qs.get_model_and_key_from_relationship(
+            query, model, ['test2', 'test', 'name'])
+        assert res[1] is registry.Test
+        assert res[2] == 'name'
