@@ -410,14 +410,20 @@ class CrudResource:
     has_put = True
 
     ADAPTERS = {}
+    SCHEMAS = {}
 
     def __init__(self, request, **kwargs):
         self.request = request
         self.registry = self.request.anyblok.registry
         self.adapter = None
+        cls = self.__class__
+
+        if self.registry not in cls.SCHEMAS:
+            self.schemas = cls.SCHEMAS[self.registry] = {}
+        else:
+            self.schemas = cls.SCHEMAS[self.registry]
 
         if self.QueryStringAdapter:
-            cls = self.__class__
             if self.registry not in cls.ADAPTERS:
                 self.adapter = self.QueryStringAdapter(
                     self.registry,
@@ -472,15 +478,30 @@ class CrudResource:
         return [(Deny, Everyone, ALL_PERMISSIONS)]
 
     @classmethod
-    def apply_validator_schema(cls, request, part, Schema, opts, base):
-        if 'context' not in opts:
-            opts['context'] = {}
+    def get_validator_schema(cls, request, part, rest_action, model_name):
+        key = (part, rest_action, model_name)
+        schema = cls.SCHEMAS.get(key)
+        if schema is None:
+            if part == 'deserialize':
+                Schema = cls.get_deserialize_schema(rest_action, model_name)
+                opts = cls.get_deserialize_opts(rest_action)
+            elif part == 'path':
+                Schema = cls.get_path_schema(rest_action)
+                opts = cls.get_path_opts(rest_action)
+            else:
+                raise KeyError(part)
 
-        opts['context']['registry'] = request.anyblok.registry
-        try:
-            logger.debug('Validate %r with schema %r and option %r',
-                         base[part], Schema, opts)
+            opts['context']['registry'] = request.anyblok.registry
             schema = Schema(**opts)
+            cls.append_schema(request.anyblok.registry, key, schema)
+
+        return schema
+
+    @classmethod
+    def apply_validator_schema(cls, request, part, schema, base):
+        logger.debug('Validate %r with schema %r',
+                     base['body'], schema)
+        try:
             result = schema.load(base[part])
             request.validated[part] = result
         except ValidationError as err:
@@ -556,7 +577,7 @@ class CrudResource:
 
     @classmethod
     def get_deserialize_opts(cls, rest_action):
-        opts = {}
+        opts = {'context': {}}
         if rest_action == 'collection_patch':
             opts['partial'] = True
             opts['many'] = True
@@ -587,12 +608,25 @@ class CrudResource:
         opts = {'context': {'only_primary_key': True}}
         return opts
 
+    @classmethod
+    def append_schema(cls, registry, key, schema):
+        if isinstance(schema, SchemaWrapper):
+            schema = schema.schema
+
+        cls.SCHEMAS[registry][key] = schema
+
     def serialize(self, rest_action, entry):
-        Schema = self.get_serialize_schema(
-            rest_action, self.model_name(rest_action))
-        opts = self.get_serialize_opts(rest_action)
-        opts['context'] = {'registry': self.registry}
-        schema = Schema(**opts)
+        model_name = self.model_name(rest_action)
+        key = ('serialize', rest_action, model_name)
+        schema = self.schemas.get(key)
+        if not schema:
+            Schema = self.get_serialize_schema(
+                rest_action, self.model_name(rest_action))
+            opts = self.get_serialize_opts(rest_action)
+            opts['context'] = {'registry': self.registry}
+            schema = Schema(**opts)
+            self.append_schema(self.registry, key, schema)
+
         return schema.dump(entry)
 
     @property

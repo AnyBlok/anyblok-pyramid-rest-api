@@ -158,9 +158,9 @@ def collection_post_validator(request, deserializer=None, klass=None, **kwargs):
     base = deserializer(request)
     # validate the body
     model_name = klass.get_model_name(request, base)
-    Schema = klass.get_deserialize_schema('collection_post', model_name)
-    opts = klass.get_deserialize_opts('collection_post')
-    klass.apply_validator_schema(request, 'body', Schema, opts, base)
+    schema = klass.get_validator_schema(
+        request, 'deserialize', 'collection_post', model_name)
+    klass.apply_validator_schema(request, 'body', schema, base)
 
 
 def collection_patch_validator(request, deserializer=None, klass=None,
@@ -171,9 +171,9 @@ def collection_patch_validator(request, deserializer=None, klass=None,
     base = deserializer(request)
     # validate the body
     model_name = klass.get_model_name(request, base)
-    Schema = klass.get_deserialize_schema('collection_patch', model_name)
-    opts = klass.get_deserialize_opts('collection_patch')
-    klass.apply_validator_schema(request, 'body', Schema, opts, base)
+    schema = klass.get_validator_schema(
+        request, 'deserialize', 'collection_patch', model_name)
+    klass.apply_validator_schema(request, 'body', schema, base)
 
 
 def collection_put_validator(request, deserializer=None, klass=None, **kwargs):
@@ -183,9 +183,9 @@ def collection_put_validator(request, deserializer=None, klass=None, **kwargs):
     base = deserializer(request)
     # validate the body
     model_name = klass.get_model_name(request, base)
-    Schema = klass.get_deserialize_schema('collection_put', model_name)
-    opts = klass.get_deserialize_opts('collection_put')
-    klass.apply_validator_schema(request, 'body', Schema, opts, base)
+    schema = klass.get_validator_schema(
+        request, 'deserialize', 'collection_put', model_name)
+    klass.apply_validator_schema(request, 'body', schema, base)
 
 
 def collection_delete_validator(request, deserializer=None, klass=None,
@@ -196,9 +196,9 @@ def collection_delete_validator(request, deserializer=None, klass=None,
     base = deserializer(request)
     # validate the body
     model_name = klass.get_model_name(request, base)
-    Schema = klass.get_deserialize_schema('collection_delete', model_name)
-    opts = klass.get_deserialize_opts('collection_delete')
-    klass.apply_validator_schema(request, 'body', Schema, opts, base)
+    schema = klass.get_validator_schema(
+        request, 'deserialize', 'collection_delete', model_name)
+    klass.apply_validator_schema(request, 'body', schema, base)
 
 
 def get_validator(request, deserializer=None, klass=None, **kwargs):
@@ -207,9 +207,8 @@ def get_validator(request, deserializer=None, klass=None, **kwargs):
 
     base = deserializer(request)
     # validate the path
-    Schema = klass.get_path_schema('get')
-    opts = klass.get_path_opts('get')
-    klass.apply_validator_schema(request, 'path', Schema, opts, base)
+    schema = klass.get_validator_schema(request, 'path', 'get', None)
+    klass.apply_validator_schema(request, 'path', schema, base)
 
 
 def delete_validator(request, deserializer=None, klass=None, **kwargs):
@@ -218,9 +217,8 @@ def delete_validator(request, deserializer=None, klass=None, **kwargs):
 
     base = deserializer(request)
     # validate the path
-    Schema = klass.get_path_schema('get')
-    opts = klass.get_path_opts('get')
-    klass.apply_validator_schema(request, 'path', Schema, opts, base)
+    schema = klass.get_validator_schema(request, 'path', 'get', None)
+    klass.apply_validator_schema(request, 'path', schema, base)
 
 
 def patch_validator(request, deserializer=None, klass=None, **kwargs):
@@ -228,15 +226,15 @@ def patch_validator(request, deserializer=None, klass=None, **kwargs):
         deserializer = extract_cstruct
 
     base = deserializer(request)
-    # validate the path
-    Schema = klass.get_path_schema('patch')
-    opts = klass.get_path_opts('patch')
-    klass.apply_validator_schema(request, 'path', Schema, opts, base)
-    # validate the body
     model_name = klass.get_model_name(request, base)
-    Schema = klass.get_deserialize_schema('patch', model_name)
-    opts = klass.get_deserialize_opts('patch')
-    klass.apply_validator_schema(request, 'body', Schema, opts, base)
+    # validate the path
+    schema = klass.get_validator_schema(
+        request, 'path', 'patch', model_name)
+    klass.apply_validator_schema(request, 'path', schema, base)
+    # validate the body
+    schema = klass.get_validator_schema(
+        request, 'deserialize', 'patch', model_name)
+    klass.apply_validator_schema(request, 'body', schema, base)
 
 
 def put_validator(request, deserializer=None, klass=None, **kwargs):
@@ -245,14 +243,13 @@ def put_validator(request, deserializer=None, klass=None, **kwargs):
 
     base = deserializer(request)
     # validate the path
-    Schema = klass.get_path_schema('put')
-    opts = klass.get_path_opts('put')
-    klass.apply_validator_schema(request, 'path', Schema, opts, base)
+    schema = klass.get_validator_schema(request, 'path', 'put', None)
+    klass.apply_validator_schema(request, 'path', schema, base)
     # validate the body
     model_name = klass.get_model_name(request, base)
-    Schema = klass.get_deserialize_schema('put', model_name)
-    opts = klass.get_deserialize_opts('put')
-    klass.apply_validator_schema(request, 'body', Schema, opts, base)
+    schema = klass.get_validator_schema(
+        request, 'deserialize', 'put', model_name)
+    klass.apply_validator_schema(request, 'body', schema, base)
 
 
 def execute_validator(request, deserializer=None, klass=None, schema=None,
@@ -262,12 +259,11 @@ def execute_validator(request, deserializer=None, klass=None, schema=None,
 
     base = deserializer(request)
     # validate the path
-    Schema = klass.get_path_schema('execute')
-    opts = klass.get_path_opts('execute')
-    klass.apply_validator_schema(request, 'path', Schema, opts, base)
+    schema_ = klass.get_validator_schema(request, 'path', 'execute', None)
+    klass.apply_validator_schema(request, 'path', schema_, base)
     # validate the body
     if schema:
-        klass.apply_validator_schema(request, 'body', schema, {}, base)
+        klass.apply_validator_schema(request, 'body', schema(), base)
     else:
         request.validated['body'] = base['body']
 
@@ -279,6 +275,6 @@ def collection_execute_validator(request, deserializer=None, klass=None,
 
     base = deserializer(request)
     if schema:
-        klass.apply_validator_schema(request, 'body', schema, {}, base)
+        klass.apply_validator_schema(request, 'body', schema(), base)
     else:
         request.validated['body'] = base['body']
