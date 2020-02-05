@@ -27,11 +27,7 @@ install:
   # only wheel
   - pip install wheel
   - pip install psycopg2
-  - pip install anyblok
-  - pip install marshmallow --pre
   - pip install passlib
-  - pip install flake8
-  - pip install coverage
   - pip install python-coveralls
   - pip install -U flake8 pytest pytest-cov
   - pip install WebTest
