@@ -8,6 +8,7 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 from cornice.validators import extract_cstruct
 from marshmallow import ValidationError, INCLUDE
+import warnings
 from logging import getLogger
 import re
 
@@ -29,6 +30,18 @@ def parse_key_with_two_elements(filter_):
 def parse_key_with_one_element(filter_):
     pattern = ".*\\[(.*)\\]"
     return re.match(pattern, filter_).groups()[0]
+
+
+def get_order_by(k, v):
+    key = parse_key_with_one_element(k)
+    if key in ('asc', 'desc') and v not in ('asc', 'desc'):
+        warnings.warn((
+            "deprecated: replace order_by[%(key)s]=%(op)s by"
+            "order_by[%(op)s]=%(key)s") % dict(key=key, op=v),
+            DeprecationWarning)
+        return dict(key=v, op=key)
+
+    return dict(key=key, op=v)
 
 
 def deserialize_querystring(params=None):
@@ -79,8 +92,7 @@ def deserialize_querystring(params=None):
             tags.extend(v.split(','))
         elif k.startswith("order_by["):
             # Ordering
-            key = parse_key_with_one_element(k)
-            order_by.append(dict(key=key, op=v))
+            order_by.append(get_order_by(k, v))
         elif k == 'limit':
             # TODO check to allow positive integer only if value
             limit = int(v) if v else None

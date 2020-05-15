@@ -32,6 +32,16 @@ Added
       * allow_unauthenticated_user_to_access_to_patch
       * allow_unauthenticated_user_to_access_to_put
 
+Refactored
+~~~~~~~~~~
+
+* Updated the **order_by[operator]=fieldname** by **order_by[fieldname]=operator**
+  because more than one order by can be send
+
+  .. warning::
+
+     the oldest order_by is deprecated and will be remove later
+
 
 
 0.5.0 (2019-06-21)
