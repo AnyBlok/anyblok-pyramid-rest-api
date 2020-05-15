@@ -180,21 +180,21 @@ class TestCrudResourceBase:
         assert response.json_body[0].get('name') == "plop"
 
     def test_example_collection_get_order_by_asc(self):
-        """Example collection GET /examples?order_by[asc]=field"""
+        """Example collection GET /examples?order_by[field]=asc"""
         names = ['air', 'zen']
         for name in names:
             self.create_example(name)
-        response = self.webserver.get('/examples?order_by[asc]=name')
+        response = self.webserver.get('/examples?order_by[name]=asc')
         assert response.status_code == 200
         assert len(response.json_body) == 2
         assert response.json_body[0].get('name') == "air"
 
     def test_example_collection_get_order_by_desc(self):
-        """Example collection GET /examples?order_by[desc]=field"""
+        """Example collection GET /examples?order_by[field]=desc"""
         names = ['air', 'zen']
         for name in names:
             self.create_example(name)
-        response = self.webserver.get('/examples?order_by[desc]=name')
+        response = self.webserver.get('/examples?order_by[name]=desc')
         assert response.status_code == 200
         assert len(response.json_body) == 2
         assert response.json_body[0].get('name') == "zen"
@@ -618,14 +618,14 @@ class CrudResourceAdapter:
 
     def test_adapter_wrong_order_by(self):
         self.create_adapter_customers()
-        path = self.collection_path + "?order_by[asc]=wrong"
+        path = self.collection_path + "?order_by[wrong]=asc"
         response = self.webserver.get(path, status=400)
         assert response.status_code == 400
         assert len(response.json_body) == 2
 
     def test_adapter_order_by(self):
         self.create_adapter_customers()
-        path = self.collection_path + "?order_by[asc]=address"
+        path = self.collection_path + "?order_by[address]=asc"
         response = self.webserver.get(path)
         assert response.status_code == 200
         assert response.json_body[0].get('name') == "bob"

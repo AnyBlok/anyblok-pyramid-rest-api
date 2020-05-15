@@ -54,9 +54,8 @@ def registry_rest_api_5_logged(request, testbloks_loaded):
         ['test_rest_api_1', 'test_rest_api_5', 'auth-password'], None)
     request.addfinalizer(registry.close)
 
-    registry.User.insert(
-        login='jssuzanne', first_name='js', last_name='Suzanne')
-    registry.User.CredentialStore.insert(
+    registry.Pyramid.User.insert(login='jssuzanne')
+    registry.Pyramid.CredentialStore.insert(
         login='jssuzanne', password='mypassword')
     return registry
 

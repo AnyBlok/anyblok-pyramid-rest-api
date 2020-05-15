@@ -79,8 +79,8 @@ def deserialize_querystring(params=None):
             tags.extend(v.split(','))
         elif k.startswith("order_by["):
             # Ordering
-            op = parse_key_with_one_element(k)
-            order_by.append(dict(key=v, op=op))
+            key = parse_key_with_one_element(k)
+            order_by.append(dict(key=key, op=v))
         elif k == 'limit':
             # TODO check to allow positive integer only if value
             limit = int(v) if v else None

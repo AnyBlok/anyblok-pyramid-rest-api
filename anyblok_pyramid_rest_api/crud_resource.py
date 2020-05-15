@@ -471,7 +471,7 @@ class CrudResource:
         userid = self.request.authenticated_userid
         if userid:
             resource_name = self.resource_name or self.model_name()
-            return self.registry.User.get_acl(
+            return self.registry.Pyramid.get_acl(
                 userid, resource_name, params=dict(self.request.matchdict)
             )
 
