@@ -416,11 +416,11 @@ class TestQueryString:
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
             primary_keys=[
-                dict(
-                    primary_keys=[dict(key=key, value='anyblok-core')],
+                (
+                    dict(key=key, value='anyblok-core'),
                 ),
-                dict(
-                    primary_keys=[dict(key=key, value='anyblok-test')],
+                (
+                    dict(key=key, value='anyblok-test'),
                 ),
             ]
         )
@@ -450,7 +450,7 @@ class TestQueryString:
         Q = qs.from_filter_by_primary_keys(query)
         assert Q.count() == 2
         for field in Q:
-            assert field in ('system_cache.id', 'system_blok.name')
+            assert field.code in ('system_cache.id', 'system_blok.name')
 
     def test_querystring_update_primary_keys_filter_exclude_mode(
         self, registry_blok

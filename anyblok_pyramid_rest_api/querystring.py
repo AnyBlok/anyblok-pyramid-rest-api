@@ -9,7 +9,7 @@
 from .validator import (
     FILTER_OPERATORS, ORDER_BY_OPERATORS, deserialize_querystring
 )
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from logging import getLogger
 logger = getLogger(__name__)
 
@@ -97,45 +97,94 @@ class QueryString:
         return query
 
     def from_filter_by_primary_keys(self, query):
-        # for item in self.filter_by_primary_keys:
-        #     op = item.get('op')
-        #     key = item.get('key')
-        #     value = item.get('value')
-        #     mode = item.get('mode', 'include')
-        #     # Is operator valid?
-        #     if op not in FILTER_OPERATORS:
-        #         self.request.errors.add(
-        #             'querystring',
-        #             '400 Bad Request', 'Filter %r does not exist.' % op)
-        #         self.request.errors.status = 400
-        #     elif not key:
-        #         self.request.errors.add(
-        #             'querystring',
-        #             '400 Bad Request',
-        #             "No key filled %r" % item)
-        #         self.request.errors.status = 400
-        #     elif self.has_specific_filter(key, op):
-        #         query = self.specific_filter(query, key, op, value, mode)
-        #     else:
-        #         res = self.get_model_and_key_from_relationship(
-        #             query, self.Model, key.split('.'))
-        #         if isinstance(res, tuple):
-        #             _query, _model, _key = res
-        #             condition = self.update_filter(_model, _key, op, value)
-        #             if condition is not None:
-        #                 if mode == 'include':
-        #                     query = _query.filter(condition)
-        #                 elif mode == 'exclude':
-        #                     query = _query.filter(~condition)
+        composite_filters = []
+        mode = self.filter_by_primary_keys.get('mode', 'include')
+        has_error = False
+        for primary_keys in self.filter_by_primary_keys.get('primary_keys',
+                                                            []):
+            for entry in primary_keys:
+                key = entry['key']
+                if '.' in key:
+                    has_error = True
+                    self.request.errors.add(
+                        'querystring',
+                        '400 Bad Request',
+                        f"'{key.split('.')[0]}' is a relationship, "
+                        "you should use 'composite-filter' instead of "
+                        "'primary-keys'"
+                    )
+                elif key not in self.Model.get_primary_keys():
+                    has_error = True
+                    self.request.errors.add(
+                        'querystring',
+                        '400 Bad Request',
+                        f"'{key.split('.')[0]}' is not a primary key column, "
+                        "you should use 'composite-filter' instead of "
+                        "'primary-keys'"
+                    )
 
-        #             if '.' in key:
-        #                 query = query.reset_joinpoint()
-        #         else:
-        #             self.request.errors.add(
-        #                 'querystring',
-        #                 '400 Bad Request',
-        #                 "Filter %r: %s" % (key, res))
-        #             self.request.errors.status = 400
+                entry['op'] = 'eq'
+
+            composite_filters.append(primary_keys)
+
+        if has_error:
+            self.request.errors.status = 400
+            return True
+
+        return self.compute_composite_filters(query, composite_filters, mode)
+
+    def compute_composite_filters(self, query, composite_filters, mode):
+        reset_joinpoint = False
+        where_clauses = []
+        for composite_filter in composite_filters:
+            filters = []
+            for entry in composite_filter:
+                key = entry['key']
+                op = entry['op']
+                value = entry['value']
+                if op not in FILTER_OPERATORS:
+                    self.request.errors.add(
+                        'querystring',
+                        '400 Bad Request', 'Filter %r does not exist.' % op)
+                    self.request.errors.status = 400
+                    return
+
+                res = self.get_model_and_key_from_relationship(
+                    query, self.Model, key.split('.'))
+                if isinstance(res, tuple):
+                    _query, _model, _key = res
+                    filters.append(self.update_filter(_model, _key, op, value))
+                    if '.' in key:
+                        reset_joinpoint = True
+
+                else:
+                    self.request.errors.add(
+                        'querystring',
+                        '400 Bad Request',
+                        "Filter %r: %s" % (key, res))
+                    self.request.errors.status = 400
+
+            if not filters:
+                continue
+
+            if len(filters) == 1:
+                where_clauses.append(
+                    filters[0] if mode == 'include' else ~filters[0])
+            else:
+                where_clauses.append(
+                    and_(*filters) if mode == 'include' else ~and_(*filters))
+
+        if not where_clauses:
+            pass
+        elif len(where_clauses) == 1:
+            query = _query.filter(where_clauses[0])
+        elif mode == 'include':
+            query = _query.filter(or_(*where_clauses))
+        else:
+            query = _query.filter(and_(*where_clauses))
+
+        if reset_joinpoint:
+            query = query.reset_joinpoint()
 
         return query
 
