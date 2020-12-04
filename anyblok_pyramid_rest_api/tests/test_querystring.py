@@ -376,11 +376,11 @@ class TestQueryString:
         key = 'name'
         value = 'anyblok-core'
         qs = QueryString(request, model)
-        qs.filter_by_primary_keys = [
-            dict(
-                primary_keys=[dict(key=key, value=value)],
-            ),
-        ]
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[
+                (dict(key=key, value=value),)
+            ],
+        )
         Q = qs.from_filter_by_primary_keys(query)
         obj = Q.one()
         assert obj.name == 'anyblok-core'
@@ -393,14 +393,14 @@ class TestQueryString:
         model = registry.System.Field
         query = model.query()
         qs = QueryString(request, model)
-        qs.filter_by_primary_keys = [
-            dict(
-                primary_keys=[
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[
+                (
                     dict(key='model', value='Model.System.Cache'),
                     dict(key='name', value='id'),
-                ],
-            ),
-        ]
+                )
+            ],
+        )
         Q = qs.from_filter_by_primary_keys(query)
         obj = Q.one()
         assert obj.code == 'system_cache.id'
@@ -413,13 +413,17 @@ class TestQueryString:
         model = registry.System.Blok
         query = model.query()
         key = 'name'
-        value = 'anyblok-core,anyblok-test'
         qs = QueryString(request, model)
-        qs.filter_by_primary_keys = [
-            dict(
-                primary_keys=[dict(key=key, value=value)],
-            ),
-        ]
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[
+                dict(
+                    primary_keys=[dict(key=key, value='anyblok-core')],
+                ),
+                dict(
+                    primary_keys=[dict(key=key, value='anyblok-test')],
+                ),
+            ]
+        )
         Q = qs.from_filter_by_primary_keys(query)
         assert Q.count() == 2
 
@@ -431,15 +435,18 @@ class TestQueryString:
         model = registry.System.Field
         query = model.query()
         qs = QueryString(request, model)
-        qs.filter_by_primary_keys = [
-            dict(
-                primary_keys=[
-                    dict(key='model',
-                         value='Model.System.Cache,Model.System.Blok'),
-                    dict(key='name', value='id,name'),
-                ],
-            ),
-        ]
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[
+                (
+                    dict(key='model', value='Model.System.Cache'),
+                    dict(key='name', value='id'),
+                ),
+                (
+                    dict(key='model', value='Model.System.Blok'),
+                    dict(key='name', value='name'),
+                ),
+            ],
+        )
         Q = qs.from_filter_by_primary_keys(query)
         assert Q.count() == 2
         for field in Q:
@@ -455,12 +462,10 @@ class TestQueryString:
         key = 'name'
         value = 'anyblok-core'
         qs = QueryString(request, model)
-        qs.filter_by_primary_keys = [
-            dict(
-                primary_keys=[dict(key=key, value=value)],
-                mode="exclude",
-            ),
-        ]
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[(dict(key=key, value=value),)],
+            mode="exclude",
+        )
         Q = qs.from_filter_by_primary_keys(query)
         assert query.count() == Q.count() + 1
 
@@ -472,15 +477,15 @@ class TestQueryString:
         model = registry.System.Field
         query = model.query()
         qs = QueryString(request, model)
-        qs.filter_by_primary_keys = [
-            dict(
-                primary_keys=[
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[
+                (
                     dict(key='model', value='Model.System.Cache'),
                     dict(key='name', value='id'),
-                ],
-                mode="exclude",
-            ),
-        ]
+                )
+            ],
+            mode="exclude",
+        )
         Q = qs.from_filter_by_primary_keys(query)
         assert query.count() == Q.count() + 1
 
@@ -492,16 +497,19 @@ class TestQueryString:
         model = registry.System.Field
         query = model.query()
         qs = QueryString(request, model)
-        qs.filter_by_primary_keys = [
-            dict(
-                primary_keys=[
-                    dict(key='model',
-                         value='Model.System.Cache,Model.System.Blok'),
-                    dict(key='name', value='id,name'),
-                ],
-                mode="exclude",
-            ),
-        ]
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[
+                (
+                    dict(key='model', value='Model.System.Cache'),
+                    dict(key='name', value='id'),
+                ),
+                (
+                    dict(key='model', value='Model.System.Blok'),
+                    dict(key='name', value='name'),
+                ),
+            ],
+            mode="exclude",
+        )
         Q = qs.from_filter_by_primary_keys(query)
         assert query.count() == Q.count() + 2
         for field in Q:
@@ -517,11 +525,9 @@ class TestQueryString:
         key = 'state'
         value = 'uninstalled'
         qs = QueryString(request, model)
-        qs.filter_by_primary_keys = [
-            dict(
-                primary_keys=[dict(key=key, value=value)],
-            ),
-        ]
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[(dict(key=key, value=value),)],
+        )
         qs.from_filter_by_primary_keys(query)
         assert (
             "'state' is not a primary key column, you should use "
@@ -538,11 +544,9 @@ class TestQueryString:
         key = 'state.other'
         value = 'uninstalled'
         qs = QueryString(request, model)
-        qs.filter_by_primary_keys = [
-            dict(
-                primary_keys=[dict(key=key, value=value)],
-            ),
-        ]
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[(dict(key=key, value=value),)],
+        )
         qs.from_filter_by_primary_keys(query)
         assert (
             "'state' is a relationship, you should use "

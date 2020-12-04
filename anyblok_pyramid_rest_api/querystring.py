@@ -29,6 +29,8 @@ class QueryString:
         if request.params is not None:
             parsed_params = deserialize_querystring(request.params)
             self.filter_by = parsed_params.get('filter_by', [])
+            self.filter_by_primary_keys = parsed_params.get(
+                'filter_by_primary_keys', {})
             self.tags = parsed_params.get('tags')
             self.order_by = parsed_params.get('order_by', [])
             self.context = parsed_params.get('context', {})
@@ -42,6 +44,7 @@ class QueryString:
 
     def update_sqlalchemy_query(self, query, only_filter=False):
         query = self.from_filter_by(query)
+        query = self.from_filter_by_primary_keys(query)
         query = self.from_tags(query)
         if not only_filter:
             query = self.from_order_by(query)
@@ -90,6 +93,49 @@ class QueryString:
                         '400 Bad Request',
                         "Filter %r: %s" % (key, res))
                     self.request.errors.status = 400
+
+        return query
+
+    def from_filter_by_primary_keys(self, query):
+        # for item in self.filter_by_primary_keys:
+        #     op = item.get('op')
+        #     key = item.get('key')
+        #     value = item.get('value')
+        #     mode = item.get('mode', 'include')
+        #     # Is operator valid?
+        #     if op not in FILTER_OPERATORS:
+        #         self.request.errors.add(
+        #             'querystring',
+        #             '400 Bad Request', 'Filter %r does not exist.' % op)
+        #         self.request.errors.status = 400
+        #     elif not key:
+        #         self.request.errors.add(
+        #             'querystring',
+        #             '400 Bad Request',
+        #             "No key filled %r" % item)
+        #         self.request.errors.status = 400
+        #     elif self.has_specific_filter(key, op):
+        #         query = self.specific_filter(query, key, op, value, mode)
+        #     else:
+        #         res = self.get_model_and_key_from_relationship(
+        #             query, self.Model, key.split('.'))
+        #         if isinstance(res, tuple):
+        #             _query, _model, _key = res
+        #             condition = self.update_filter(_model, _key, op, value)
+        #             if condition is not None:
+        #                 if mode == 'include':
+        #                     query = _query.filter(condition)
+        #                 elif mode == 'exclude':
+        #                     query = _query.filter(~condition)
+
+        #             if '.' in key:
+        #                 query = query.reset_joinpoint()
+        #         else:
+        #             self.request.errors.add(
+        #                 'querystring',
+        #                 '400 Bad Request',
+        #                 "Filter %r: %s" % (key, res))
+        #             self.request.errors.status = 400
 
         return query
 
