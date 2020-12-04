@@ -133,9 +133,18 @@ class QueryString:
 
         return self.compute_composite_filters(query, composite_filters, mode)
 
+    def compute_composite_filters_where_clause(self, where_clauses, mode):
+        if len(where_clauses) == 1:
+            return where_clauses[0]
+        elif mode == 'include':
+            return or_(*where_clauses)
+        else:
+            return and_(*where_clauses)
+
     def compute_composite_filters(self, query, composite_filters, mode):
         reset_joinpoint = False
         where_clauses = []
+        main_query = query
         for composite_filter in composite_filters:
             filters = []
             for entry in composite_filter:
@@ -150,9 +159,9 @@ class QueryString:
                     return
 
                 res = self.get_model_and_key_from_relationship(
-                    query, self.Model, key.split('.'))
+                    main_query, self.Model, key.split('.'))
                 if isinstance(res, tuple):
-                    _query, _model, _key = res
+                    query, _model, _key = res
                     filters.append(self.update_filter(_model, _key, op, value))
                     if '.' in key:
                         reset_joinpoint = True
@@ -176,12 +185,9 @@ class QueryString:
 
         if not where_clauses:
             pass
-        elif len(where_clauses) == 1:
-            query = _query.filter(where_clauses[0])
-        elif mode == 'include':
-            query = _query.filter(or_(*where_clauses))
         else:
-            query = _query.filter(and_(*where_clauses))
+            query = query.filter(self.compute_composite_filters_where_clause(
+                where_clauses, mode))
 
         if reset_joinpoint:
             query = query.reset_joinpoint()
