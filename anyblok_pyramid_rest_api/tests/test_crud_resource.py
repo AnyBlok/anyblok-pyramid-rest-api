@@ -297,6 +297,18 @@ class TestCrudResourceBase:
         for res in response.json_body:
             assert res.get('name') != examples[2].name
 
+    def test_example_collection_get_filter_by_primary_keys_3(self):
+        """Example collection GET /examples?filter[name][eq]=term"""
+        names = ['air', 'bar', 'car', 'dot', 'zen']
+        examples = []
+        for name in names:
+            examples.append(self.create_example(name))
+        response = self.webserver.get(
+            f'/examples?primary-keys[id]={examples[2].id},{examples[3].id}')
+        assert response.status_code == 200
+        assert int(response.headers.get('X-Total-Records')) == 2
+        assert int(response.headers.get('X-Count-Records')) == 2
+
 
 class TestCrudResourceFilterByPrimaryKey:
     """Test CrudResource class from
@@ -324,7 +336,7 @@ class TestCrudResourceFilterByPrimaryKey:
     def test_example_include_mode(self):
         """Example GET /columns on System.Cache.id"""
         response = self.webserver.get(
-            '/columns?primary-keys[model:name]=Model.System.Cache.id')
+            '/columns?primary-keys[model:name]=Model.System.Cache:id')
         assert response.status_code == 200
         assert int(response.headers.get('X-Total-Records')) == 1
         assert int(response.headers.get('X-Count-Records')) == 1
@@ -334,16 +346,22 @@ class TestCrudResourceFilterByPrimaryKey:
     def test_example_include_mode_2(self):
         """Example GET /columns on System.Cache.id"""
         response = self.webserver.get(
-            '/columns?primary-keys[model:name]=Model.System.Cache.id,Model.'
+            '/columns?primary-keys[model:name]=Model.System.Cache:id,Model.'
             'System.Blok:name')
         assert response.status_code == 200
         assert int(response.headers.get('X-Total-Records')) == 2
         assert int(response.headers.get('X-Count-Records')) == 2
 
+    def test_with_wrong_parameter(self):
+        """Example GET /columns on System.Cache.id"""
+        with pytest.raises(ValueError):
+            self.webserver.get(
+                '/columns?primary-keys[model:name]=Model.System.Cache.id')
+
     def test_example_exclude_mode(self):
         """Example GET /columns not on System.Cache.id"""
         response = self.webserver.get(
-            '/columns?~primary-keys[model:name]=Model.System.Cache.id')
+            '/columns?~primary-keys[model:name]=Model.System.Cache:id')
         expected = self.registry.System.Column.query().count() - 1
         assert response.status_code == 200
         assert int(response.headers.get('X-Total-Records')) == expected
@@ -352,7 +370,7 @@ class TestCrudResourceFilterByPrimaryKey:
     def test_example_exclude_mode_2(self):
         """Example GET /columns not on System.Cache.id"""
         response = self.webserver.get(
-            '/columns?~primary-keys[model:name]=Model.System.Cache.id,Model.'
+            '/columns?~primary-keys[model:name]=Model.System.Cache:id,Model.'
             'System.Blok:name')
         expected = self.registry.System.Column.query().count() - 2
         assert response.status_code == 200
