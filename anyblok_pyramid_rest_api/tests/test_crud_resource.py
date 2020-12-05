@@ -378,6 +378,75 @@ class TestCrudResourceFilterByPrimaryKey:
         assert int(response.headers.get('X-Count-Records')) == expected
 
 
+class TestCrudResourceCompositeFilter:
+    """Test CrudResource class from
+    test_bloks/test_1/views.py:ExampleResourceBaseValidator.
+
+    This is the basic case, no validators(except the default one,
+    base_validator), no schema.
+    """
+
+    @pytest.fixture(autouse=True)
+    def transact(self, request, registry_rest_api_2, webserver):
+        transaction = registry_rest_api_2.begin_nested()
+        self.registry = registry_rest_api_2
+
+        def rollback():
+            try:
+                transaction.rollback()
+            except Exception:
+                pass
+
+        request.addfinalizer(rollback)
+        self.webserver = webserver
+        return
+
+    def test_example_include_mode(self):
+        """Example GET /columns on System.Cache.id"""
+        response = self.webserver.get(
+            '/columns?primary-keys[model:name][eq:eq]=Model.System.Cache:id')
+        assert response.status_code == 200
+        assert int(response.headers.get('X-Total-Records')) == 1
+        assert int(response.headers.get('X-Count-Records')) == 1
+        assert len(response.json_body) == 1
+        assert response.json_body[0].get('code') == 'system_cache.id'
+
+    def test_example_include_mode_2(self):
+        """Example GET /columns on System.Cache.id"""
+        response = self.webserver.get(
+            '/columns?primary-keys[model:name][eq:eq]=Model.System.Cache:id,'
+            'Model.System.Blok:name')
+        assert response.status_code == 200
+        assert int(response.headers.get('X-Total-Records')) == 2
+        assert int(response.headers.get('X-Count-Records')) == 2
+
+    def test_with_wrong_parameter(self):
+        """Example GET /columns on System.Cache.id"""
+        with pytest.raises(ValueError):
+            self.webserver.get(
+                '/columns?primary-keys[model:name][eq:eq]=Model.System.Cache.'
+                'id')
+
+    def test_example_exclude_mode(self):
+        """Example GET /columns not on System.Cache.id"""
+        response = self.webserver.get(
+            '/columns?~primary-keys[model:name][eq:eq]=Model.System.Cache:id')
+        expected = self.registry.System.Column.query().count() - 1
+        assert response.status_code == 200
+        assert int(response.headers.get('X-Total-Records')) == expected
+        assert int(response.headers.get('X-Count-Records')) == expected
+
+    def test_example_exclude_mode_2(self):
+        """Example GET /columns not on System.Cache.id"""
+        response = self.webserver.get(
+            '/columns?~primary-keys[model:name][eq:eq]=Model.System.Cache:id,'
+            'Model.System.Blok:name')
+        expected = self.registry.System.Column.query().count() - 2
+        assert response.status_code == 200
+        assert int(response.headers.get('X-Total-Records')) == expected
+        assert int(response.headers.get('X-Count-Records')) == expected
+
+
 class TestCrudResourceWithDefaultSchema:
     """Test CrudResource class from
     test_bloks/test_1/views.py:ExampleResourceBaseValidator.
