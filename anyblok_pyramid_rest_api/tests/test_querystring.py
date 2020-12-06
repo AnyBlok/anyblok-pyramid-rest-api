@@ -36,12 +36,12 @@ def add_many2one_class():
     class Test2:
         id = Integer(primary_key=True)
         test = Many2One(model=Declarations.Model.Test)
+        other = String()
 
     @Declarations.register(Declarations.Model)
     class Test3:
         id = Integer(primary_key=True)
         test2 = Many2One(model=Declarations.Model.Test2)
-        other = String()
 
 
 class MockRequestError:
@@ -559,7 +559,7 @@ class TestQueryString:
     ):
         registry = registry_blok
         request = MockRequest(self)
-        model = registry.System.Blok
+        model = registry.System.Field
         query = model.query()
         qs = QueryString(request, model)
         qs.composite_filter_by = [dict(
@@ -574,10 +574,10 @@ class TestQueryString:
                 ),
             ],
         )]
-        Q = qs.from_filter_by_primary_keys(query)
-        assert query.count() == Q.count() + 2
+        Q = qs.from_composite_filter_by(query)
+        assert Q.count() == 2
         for field in Q:
-            assert field not in ('system_cache.id', 'system_blok.name')
+            assert field.code in ('system_cache.id', 'system_blok.name')
 
     def test_querystring_update_composite_filter_include_mode_2(
         self, registry_blok
@@ -594,7 +594,7 @@ class TestQueryString:
                 (dict(key=key, value=value, op='eq'),)
             ],
         )]
-        qs.from_filter_by_primary_keys(query)
+        qs.from_composite_filter_by(query)
         assert (
             "A composite filter must have more than 1 key, "
             "You should use filter" in request.errors.messages)
@@ -855,7 +855,7 @@ class TestQueryStringWithM2O:
         assert res[1] is registry.Test
         assert res[2] == 'name'
 
-    def test_composite_file_on_m2o(
+    def test_composite_filter_on_m2o(
         self, registry_blok_with_m2o
     ):
         registry = registry_blok_with_m2o
@@ -863,7 +863,6 @@ class TestQueryStringWithM2O:
         model = registry.Test2
         query = model.query()
         qs = QueryString(request, model)
-        Q = qs.from_order_by(query)
 
         t1 = registry.Test(name='test')
         t2 = registry.Test(name='other')
@@ -880,4 +879,5 @@ class TestQueryStringWithM2O:
                 ),
             ],
         )]
+        Q = qs.from_composite_filter_by(query)
         assert Q.one().id == x.id

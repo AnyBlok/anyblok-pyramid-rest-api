@@ -44,7 +44,7 @@ def get_order_by(k, v):
     return dict(key=key, op=v)
 
 
-def deserialize_querystring_primary_keys(key, value, mode=None):
+def deserialize_querystring_composite_filters(key, op, value, mode=None):
     primary_keys = []
     keys = key.split(':')
 
@@ -61,7 +61,7 @@ def deserialize_querystring_primary_keys(key, value, mode=None):
         primary_keys.append(composite_filters)
 
     return {
-        'primary_keys': primary_keys,
+        'filters': primary_keys,
         'mode': mode,
     }
 
@@ -104,8 +104,8 @@ def deserialize_querystring(params=None):
                 mode=("exclude" if k[0] == '~' else "include")))
         elif k.startswith("primary-keys[") or k.startswith("~primary-keys["):
             key = parse_key_with_one_element(k)
-            filter_by_primary_keys = deserialize_querystring_primary_keys(
-                key, v, mode=("exclude" if k[0] == '~' else "include"))
+            filter_by_primary_keys = deserialize_querystring_composite_filters(
+                key, None, v, mode=("exclude" if k[0] == '~' else "include"))
         elif k.startswith("context["):
             key = parse_key_with_one_element(k)
             context[key] = v
