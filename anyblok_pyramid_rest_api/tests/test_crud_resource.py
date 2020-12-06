@@ -404,7 +404,8 @@ class TestCrudResourceCompositeFilter:
     def test_example_include_mode(self):
         """Example GET /columns on System.Cache.id"""
         response = self.webserver.get(
-            '/columns?primary-keys[model:name][eq:eq]=Model.System.Cache:id')
+            '/columns?composite-filter[model:name][eq:eq]=Model.System.Cache:id'
+        )
         assert response.status_code == 200
         assert int(response.headers.get('X-Total-Records')) == 1
         assert int(response.headers.get('X-Count-Records')) == 1
@@ -414,8 +415,8 @@ class TestCrudResourceCompositeFilter:
     def test_example_include_mode_2(self):
         """Example GET /columns on System.Cache.id"""
         response = self.webserver.get(
-            '/columns?primary-keys[model:name][eq:eq]=Model.System.Cache:id,'
-            'Model.System.Blok:name')
+            '/columns?composite-filter[model:name][eq:eq]=Model.System.Cache:'
+            'id,Model.System.Blok:name')
         assert response.status_code == 200
         assert int(response.headers.get('X-Total-Records')) == 2
         assert int(response.headers.get('X-Count-Records')) == 2
@@ -424,13 +425,14 @@ class TestCrudResourceCompositeFilter:
         """Example GET /columns on System.Cache.id"""
         with pytest.raises(ValueError):
             self.webserver.get(
-                '/columns?primary-keys[model:name][eq:eq]=Model.System.Cache.'
-                'id')
+                '/columns?composite-filter[model:name][eq:eq]=Model.System.'
+                'Cache.id')
 
     def test_example_exclude_mode(self):
         """Example GET /columns not on System.Cache.id"""
         response = self.webserver.get(
-            '/columns?~primary-keys[model:name][eq:eq]=Model.System.Cache:id')
+            '/columns?~composite-filter[model:name][eq:eq]=Model.System.Cache:'
+            'id')
         expected = self.registry.System.Column.query().count() - 1
         assert response.status_code == 200
         assert int(response.headers.get('X-Total-Records')) == expected
@@ -439,8 +441,8 @@ class TestCrudResourceCompositeFilter:
     def test_example_exclude_mode_2(self):
         """Example GET /columns not on System.Cache.id"""
         response = self.webserver.get(
-            '/columns?~primary-keys[model:name][eq:eq]=Model.System.Cache:id,'
-            'Model.System.Blok:name')
+            '/columns?~composite-filter[model:name][eq:eq]=Model.System.Cache:'
+            'id,Model.System.Blok:name')
         expected = self.registry.System.Column.query().count() - 2
         assert response.status_code == 200
         assert int(response.headers.get('X-Total-Records')) == expected

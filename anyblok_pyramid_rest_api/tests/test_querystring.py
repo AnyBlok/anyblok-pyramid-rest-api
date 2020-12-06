@@ -378,7 +378,7 @@ class TestQueryString:
         value = 'anyblok-core'
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[
+            filters=[
                 (dict(key=key, value=value),)
             ],
         )
@@ -395,7 +395,7 @@ class TestQueryString:
         query = model.query()
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[
+            filters=[
                 (
                     dict(key='model', value='Model.System.Cache'),
                     dict(key='name', value='id'),
@@ -416,7 +416,7 @@ class TestQueryString:
         key = 'name'
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[
+            filters=[
                 (
                     dict(key=key, value='anyblok-core'),
                 ),
@@ -437,7 +437,7 @@ class TestQueryString:
         query = model.query()
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[
+            filters=[
                 (
                     dict(key='model', value='Model.System.Cache'),
                     dict(key='name', value='id'),
@@ -464,7 +464,7 @@ class TestQueryString:
         value = 'anyblok-core'
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[(dict(key=key, value=value),)],
+            filters=[(dict(key=key, value=value),)],
             mode="exclude",
         )
         Q = qs.from_filter_by_primary_keys(query)
@@ -479,7 +479,7 @@ class TestQueryString:
         query = model.query()
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[
+            filters=[
                 (
                     dict(key='model', value='Model.System.Cache'),
                     dict(key='name', value='id'),
@@ -499,7 +499,7 @@ class TestQueryString:
         query = model.query()
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[
+            filters=[
                 (
                     dict(key='model', value='Model.System.Cache'),
                     dict(key='name', value='id'),
@@ -527,7 +527,7 @@ class TestQueryString:
         value = 'uninstalled'
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[(dict(key=key, value=value),)],
+            filters=[(dict(key=key, value=value),)],
         )
         qs.from_filter_by_primary_keys(query)
         assert (
@@ -546,7 +546,7 @@ class TestQueryString:
         value = 'uninstalled'
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[(dict(key=key, value=value),)],
+            filters=[(dict(key=key, value=value),)],
         )
         qs.from_filter_by_primary_keys(query)
         assert (
