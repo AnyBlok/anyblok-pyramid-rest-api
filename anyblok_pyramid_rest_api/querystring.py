@@ -31,6 +31,8 @@ class QueryString:
             self.filter_by = parsed_params.get('filter_by', [])
             self.filter_by_primary_keys = parsed_params.get(
                 'filter_by_primary_keys', {})
+            self.composite_filter_by = parsed_params.get(
+                'composite_filter_by', [])
             self.tags = parsed_params.get('tags')
             self.order_by = parsed_params.get('order_by', [])
             self.context = parsed_params.get('context', {})
@@ -45,6 +47,7 @@ class QueryString:
     def update_sqlalchemy_query(self, query, only_filter=False):
         query = self.from_filter_by(query)
         query = self.from_filter_by_primary_keys(query)
+        query = self.from_composite_filter_by(query)
         query = self.from_tags(query)
         if not only_filter:
             query = self.from_order_by(query)
@@ -100,8 +103,7 @@ class QueryString:
         composite_filters = []
         mode = self.filter_by_primary_keys.get('mode', 'include')
         has_error = False
-        for primary_keys in self.filter_by_primary_keys.get('primary_keys',
-                                                            []):
+        for primary_keys in self.filter_by_primary_keys.get('filters', []):
             for entry in primary_keys:
                 key = entry['key']
                 if '.' in key:
@@ -133,6 +135,28 @@ class QueryString:
 
         return self.compute_composite_filters(query, composite_filters, mode)
 
+    def from_composite_filter_by(self, query):
+        has_error = False
+        for composite_filters in self.composite_filter_by:
+            filters = composite_filters.get('filters', [])
+            for entry in filters:
+                if len(entry) == 1:
+                    has_error = True
+                    self.request.errors.add(
+                        'querystring',
+                        '400 Bad Request',
+                        "A composite filter must have more than 1 key, "
+                        "You should use filter")
+
+            mode = composite_filters.get('mode', 'include')
+            query = self.compute_composite_filters(query, filters, mode)
+
+        if has_error:
+            self.request.errors.status = 400
+            return True
+
+        return query
+
     def compute_composite_filters_where_clause(self, where_clauses, mode):
         if len(where_clauses) == 1:
             return where_clauses[0]
@@ -144,7 +168,6 @@ class QueryString:
     def compute_composite_filters(self, query, composite_filters, mode):
         reset_joinpoint = False
         where_clauses = []
-        main_query = query
         for composite_filter in composite_filters:
             filters = []
             for entry in composite_filter:
@@ -159,7 +182,7 @@ class QueryString:
                     return
 
                 res = self.get_model_and_key_from_relationship(
-                    main_query, self.Model, key.split('.'))
+                    query, self.Model, key.split('.'))
                 if isinstance(res, tuple):
                     query, _model, _key = res
                     filters.append(self.update_filter(_model, _key, op, value))

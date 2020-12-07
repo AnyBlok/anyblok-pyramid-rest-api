@@ -38,7 +38,7 @@ env:
     - ANYBLOK_DATABASE_USER=postgres
 
 script:
-  - flake8 anyblok_pyramid_rest_api --ignore F999
+  - flake8 anyblok_pyramid_rest_api
   - psql -c 'create database travis_ci_test;' -U postgres
   - py.test anyblok_pyramid_rest_api/tests
 

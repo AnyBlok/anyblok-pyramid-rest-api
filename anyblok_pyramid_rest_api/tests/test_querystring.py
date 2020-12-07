@@ -36,6 +36,7 @@ def add_many2one_class():
     class Test2:
         id = Integer(primary_key=True)
         test = Many2One(model=Declarations.Model.Test)
+        other = String()
 
     @Declarations.register(Declarations.Model)
     class Test3:
@@ -377,7 +378,7 @@ class TestQueryString:
         value = 'anyblok-core'
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[
+            filters=[
                 (dict(key=key, value=value),)
             ],
         )
@@ -394,7 +395,7 @@ class TestQueryString:
         query = model.query()
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[
+            filters=[
                 (
                     dict(key='model', value='Model.System.Cache'),
                     dict(key='name', value='id'),
@@ -415,7 +416,7 @@ class TestQueryString:
         key = 'name'
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[
+            filters=[
                 (
                     dict(key=key, value='anyblok-core'),
                 ),
@@ -436,7 +437,7 @@ class TestQueryString:
         query = model.query()
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[
+            filters=[
                 (
                     dict(key='model', value='Model.System.Cache'),
                     dict(key='name', value='id'),
@@ -463,7 +464,7 @@ class TestQueryString:
         value = 'anyblok-core'
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[(dict(key=key, value=value),)],
+            filters=[(dict(key=key, value=value),)],
             mode="exclude",
         )
         Q = qs.from_filter_by_primary_keys(query)
@@ -478,7 +479,7 @@ class TestQueryString:
         query = model.query()
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[
+            filters=[
                 (
                     dict(key='model', value='Model.System.Cache'),
                     dict(key='name', value='id'),
@@ -498,7 +499,7 @@ class TestQueryString:
         query = model.query()
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[
+            filters=[
                 (
                     dict(key='model', value='Model.System.Cache'),
                     dict(key='name', value='id'),
@@ -526,7 +527,7 @@ class TestQueryString:
         value = 'uninstalled'
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[(dict(key=key, value=value),)],
+            filters=[(dict(key=key, value=value),)],
         )
         qs.from_filter_by_primary_keys(query)
         assert (
@@ -545,13 +546,58 @@ class TestQueryString:
         value = 'uninstalled'
         qs = QueryString(request, model)
         qs.filter_by_primary_keys = dict(
-            primary_keys=[(dict(key=key, value=value),)],
+            filters=[(dict(key=key, value=value),)],
         )
         qs.from_filter_by_primary_keys(query)
         assert (
             "'state' is a relationship, you should use "
             "'composite-filter' instead of 'primary-keys'" in
             request.errors.messages)
+
+    def test_querystring_update_composite_filter_include_mode_1(
+        self, registry_blok
+    ):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Field
+        query = model.query()
+        qs = QueryString(request, model)
+        qs.composite_filter_by = [dict(
+            filters=[
+                (
+                    dict(key='model', op="eq", value='Model.System.Cache'),
+                    dict(key='name', op="eq", value='id'),
+                ),
+                (
+                    dict(key='model', op="eq", value='Model.System.Blok'),
+                    dict(key='name', op="eq", value='name'),
+                ),
+            ],
+        )]
+        Q = qs.from_composite_filter_by(query)
+        assert Q.count() == 2
+        for field in Q:
+            assert field.code in ('system_cache.id', 'system_blok.name')
+
+    def test_querystring_update_composite_filter_include_mode_2(
+        self, registry_blok
+    ):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = 'name'
+        value = 'anyblok-core'
+        qs = QueryString(request, model)
+        qs.composite_filter_by = [dict(
+            filters=[
+                (dict(key=key, value=value, op='eq'),)
+            ],
+        )]
+        qs.from_composite_filter_by(query)
+        assert (
+            "A composite filter must have more than 1 key, "
+            "You should use filter" in request.errors.messages)
 
 
 @pytest.fixture(scope="class")
@@ -808,3 +854,30 @@ class TestQueryStringWithM2O:
             query, model, ['test2', 'test', 'name'])
         assert res[1] is registry.Test
         assert res[2] == 'name'
+
+    def test_composite_filter_on_m2o(
+        self, registry_blok_with_m2o
+    ):
+        registry = registry_blok_with_m2o
+        request = MockRequest(self)
+        model = registry.Test2
+        query = model.query()
+        qs = QueryString(request, model)
+
+        t1 = registry.Test(name='test')
+        t2 = registry.Test(name='other')
+        model.insert(test=t1, other='foo')
+        x = model.insert(test=t2, other='foo')
+        model.insert(test=t2, other='bar')
+        model.insert(test=t1, other='bar')
+
+        qs.composite_filter_by = [dict(
+            filters=[
+                (
+                    dict(key='test.name', op="eq", value='other'),
+                    dict(key='other', op="eq", value='foo'),
+                ),
+            ],
+        )]
+        Q = qs.from_composite_filter_by(query)
+        assert Q.one().id == x.id

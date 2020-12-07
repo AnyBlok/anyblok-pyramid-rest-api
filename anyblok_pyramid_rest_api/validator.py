@@ -44,9 +44,15 @@ def get_order_by(k, v):
     return dict(key=key, op=v)
 
 
-def deserialize_querystring_primary_keys(key, value, mode=None):
-    primary_keys = []
+def deserialize_querystring_composite_filters(key, op, value, mode=None):
+    filters = []
     keys = key.split(':')
+    ops = []
+    if op is not None:
+        ops = op.split(':')
+        if len(keys) != len(ops):
+            raise ValueError(
+                f'len of key {keys} is different than len of op {ops}')
 
     for values in value.split(','):
         v = values.split(':')
@@ -56,17 +62,20 @@ def deserialize_querystring_primary_keys(key, value, mode=None):
                 f'len of key {keys} is different than len of value {v}')
 
         for i, k in enumerate(keys):
-            composite_filters.append(dict(key=k, value=v[i]))
+            filter_ = dict(key=k, value=v[i])
+            if op is not None:
+                filter_['op'] = ops[i]
+            composite_filters.append(filter_)
 
-        primary_keys.append(composite_filters)
+        filters.append(composite_filters)
 
     return {
-        'primary_keys': primary_keys,
+        'filters': filters,
         'mode': mode,
     }
 
 
-def deserialize_querystring(params=None):
+def deserialize_querystring(params=None):  # noqa C901
     """
     Given a querystring parameters dict, returns a new dict that will be used
     to build query filters.
@@ -88,6 +97,7 @@ def deserialize_querystring(params=None):
     :rtype: dict
     """
     filter_by = []
+    composite_filter_by = []
     filter_by_primary_keys = {}
     order_by = []
     tags = []
@@ -104,8 +114,17 @@ def deserialize_querystring(params=None):
                 mode=("exclude" if k[0] == '~' else "include")))
         elif k.startswith("primary-keys[") or k.startswith("~primary-keys["):
             key = parse_key_with_one_element(k)
-            filter_by_primary_keys = deserialize_querystring_primary_keys(
-                key, v, mode=("exclude" if k[0] == '~' else "include"))
+            filter_by_primary_keys = deserialize_querystring_composite_filters(
+                key, None, v, mode=("exclude" if k[0] == '~' else "include"))
+        elif (
+            k.startswith("composite-filter[") or
+            k.startswith("~composite-filter[")
+        ):
+            key, op = parse_key_with_two_elements(k)
+            composite_filter_by.append(
+                deserialize_querystring_composite_filters(
+                    key, op, v, mode=("exclude" if k[0] == '~' else "include")
+                ))
         elif k.startswith("context["):
             key = parse_key_with_one_element(k)
             context[key] = v
@@ -125,9 +144,10 @@ def deserialize_querystring(params=None):
         else:
             raise KeyError('Bad querystring : %s=%s' % (k, v))
 
-    return dict(filter_by=filter_by, order_by=order_by, limit=limit,
+    return dict(filter_by=filter_by, composite_filter_by=composite_filter_by,
+                order_by=order_by, limit=limit, offset=offset,
                 filter_by_primary_keys=filter_by_primary_keys,
-                offset=offset, tags=tags, context=context)
+                tags=tags, context=context)
 
 
 def base_validator(request, schema, deserializer, only, unknown=INCLUDE):
