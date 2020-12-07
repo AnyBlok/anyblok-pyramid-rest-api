@@ -366,6 +366,193 @@ class TestQueryString:
         qs = QueryString(request, model)
         assert not (qs.has_tag('unknown.tag'))
 
+    def test_querystring_update_primary_keys_filter_include_mode(
+        self, registry_blok
+    ):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = 'name'
+        value = 'anyblok-core'
+        qs = QueryString(request, model)
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[
+                (dict(key=key, value=value),)
+            ],
+        )
+        Q = qs.from_filter_by_primary_keys(query)
+        obj = Q.one()
+        assert obj.name == 'anyblok-core'
+
+    def test_querystring_update_primary_keys_filter_include_mode_2(
+        self, registry_blok
+    ):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Field
+        query = model.query()
+        qs = QueryString(request, model)
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[
+                (
+                    dict(key='model', value='Model.System.Cache'),
+                    dict(key='name', value='id'),
+                )
+            ],
+        )
+        Q = qs.from_filter_by_primary_keys(query)
+        obj = Q.one()
+        assert obj.code == 'system_cache.id'
+
+    def test_querystring_update_primary_keys_filter_include_mode_3(
+        self, registry_blok
+    ):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = 'name'
+        qs = QueryString(request, model)
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[
+                (
+                    dict(key=key, value='anyblok-core'),
+                ),
+                (
+                    dict(key=key, value='anyblok-test'),
+                ),
+            ]
+        )
+        Q = qs.from_filter_by_primary_keys(query)
+        assert Q.count() == 2
+
+    def test_querystring_update_primary_keys_filter_include_mode_4(
+        self, registry_blok
+    ):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Field
+        query = model.query()
+        qs = QueryString(request, model)
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[
+                (
+                    dict(key='model', value='Model.System.Cache'),
+                    dict(key='name', value='id'),
+                ),
+                (
+                    dict(key='model', value='Model.System.Blok'),
+                    dict(key='name', value='name'),
+                ),
+            ],
+        )
+        Q = qs.from_filter_by_primary_keys(query)
+        assert Q.count() == 2
+        for field in Q:
+            assert field.code in ('system_cache.id', 'system_blok.name')
+
+    def test_querystring_update_primary_keys_filter_exclude_mode(
+        self, registry_blok
+    ):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = 'name'
+        value = 'anyblok-core'
+        qs = QueryString(request, model)
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[(dict(key=key, value=value),)],
+            mode="exclude",
+        )
+        Q = qs.from_filter_by_primary_keys(query)
+        assert query.count() == Q.count() + 1
+
+    def test_querystring_update_primary_keys_filter_exclude_mode_2(
+        self, registry_blok
+    ):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Field
+        query = model.query()
+        qs = QueryString(request, model)
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[
+                (
+                    dict(key='model', value='Model.System.Cache'),
+                    dict(key='name', value='id'),
+                )
+            ],
+            mode="exclude",
+        )
+        Q = qs.from_filter_by_primary_keys(query)
+        assert query.count() == Q.count() + 1
+
+    def test_querystring_update_primary_keys_filter_exclude_mode_3(
+        self, registry_blok
+    ):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Field
+        query = model.query()
+        qs = QueryString(request, model)
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[
+                (
+                    dict(key='model', value='Model.System.Cache'),
+                    dict(key='name', value='id'),
+                ),
+                (
+                    dict(key='model', value='Model.System.Blok'),
+                    dict(key='name', value='name'),
+                ),
+            ],
+            mode="exclude",
+        )
+        Q = qs.from_filter_by_primary_keys(query)
+        assert query.count() == Q.count() + 2
+        for field in Q:
+            assert field not in ('system_cache.id', 'system_blok.name')
+
+    def test_querystring_update_primary_keys_filter_wrong_pks(
+        self, registry_blok
+    ):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = 'state'
+        value = 'uninstalled'
+        qs = QueryString(request, model)
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[(dict(key=key, value=value),)],
+        )
+        qs.from_filter_by_primary_keys(query)
+        assert (
+            "'state' is not a primary key column, you should use "
+            "'composite-filter' instead of 'primary-keys'" in
+            request.errors.messages)
+
+    def test_querystring_update_primary_keys_filter_wrong_on_relationship(
+        self, registry_blok
+    ):
+        registry = registry_blok
+        request = MockRequest(self)
+        model = registry.System.Blok
+        query = model.query()
+        key = 'state.other'
+        value = 'uninstalled'
+        qs = QueryString(request, model)
+        qs.filter_by_primary_keys = dict(
+            primary_keys=[(dict(key=key, value=value),)],
+        )
+        qs.from_filter_by_primary_keys(query)
+        assert (
+            "'state' is a relationship, you should use "
+            "'composite-filter' instead of 'primary-keys'" in
+            request.errors.messages)
+
 
 @pytest.fixture(scope="class")
 def registry_blok_with_integer(request, bloks_loaded):

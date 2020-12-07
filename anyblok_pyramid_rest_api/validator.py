@@ -44,6 +44,28 @@ def get_order_by(k, v):
     return dict(key=key, op=v)
 
 
+def deserialize_querystring_primary_keys(key, value, mode=None):
+    primary_keys = []
+    keys = key.split(':')
+
+    for values in value.split(','):
+        v = values.split(':')
+        composite_filters = []
+        if len(keys) != len(v):
+            raise ValueError(
+                f'len of key {keys} is different than len of value {v}')
+
+        for i, k in enumerate(keys):
+            composite_filters.append(dict(key=k, value=v[i]))
+
+        primary_keys.append(composite_filters)
+
+    return {
+        'primary_keys': primary_keys,
+        'mode': mode,
+    }
+
+
 def deserialize_querystring(params=None):
     """
     Given a querystring parameters dict, returns a new dict that will be used
@@ -66,6 +88,7 @@ def deserialize_querystring(params=None):
     :rtype: dict
     """
     filter_by = []
+    filter_by_primary_keys = {}
     order_by = []
     tags = []
     context = {}
@@ -74,15 +97,15 @@ def deserialize_querystring(params=None):
     for param in params.items():
         k, v = param
         # TODO  better regex or something?
-        if k.startswith("filter["):
-            # Filtering (include)
+        if k.startswith("filter[") or k.startswith("~filter["):
             key, op = parse_key_with_two_elements(k)
-            filter_by.append(dict(key=key, op=op, value=v, mode="include"))
-        elif k.startswith("~filter["):
-            # Filtering (exclude)
-            # TODO check for errors into string pattern
-            key, op = parse_key_with_two_elements(k)
-            filter_by.append(dict(key=key, op=op, value=v, mode="exclude"))
+            filter_by.append(dict(
+                key=key, op=op, value=v,
+                mode=("exclude" if k[0] == '~' else "include")))
+        elif k.startswith("primary-keys[") or k.startswith("~primary-keys["):
+            key = parse_key_with_one_element(k)
+            filter_by_primary_keys = deserialize_querystring_primary_keys(
+                key, v, mode=("exclude" if k[0] == '~' else "include"))
         elif k.startswith("context["):
             key = parse_key_with_one_element(k)
             context[key] = v
@@ -103,6 +126,7 @@ def deserialize_querystring(params=None):
             raise KeyError('Bad querystring : %s=%s' % (k, v))
 
     return dict(filter_by=filter_by, order_by=order_by, limit=limit,
+                filter_by_primary_keys=filter_by_primary_keys,
                 offset=offset, tags=tags, context=context)
 
 
