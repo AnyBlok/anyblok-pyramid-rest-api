@@ -57,6 +57,7 @@ def update_from_query_string(request, Model, query, adapter):
         querystring = QueryString(request, Model, adapter=adapter)
         total_query = querystring.from_filter_by(query)
         total_query = querystring.from_filter_by_primary_keys(total_query)
+        total_query = querystring.from_composite_filter_by(total_query)
         total_query = querystring.from_tags(total_query)
         query = querystring.from_order_by(total_query)
         query = querystring.from_limit(query)
