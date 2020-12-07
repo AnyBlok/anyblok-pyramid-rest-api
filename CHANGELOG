@@ -12,6 +12,16 @@ Change Log
 All notable changes to this project will be documented in this file.
 This project adheres to `Semantic Versioning <http://semver.org/>`_.
 
+0.7.0 (2020-12-07)
+------------------
+
+* Added entries in the querystring:
+
+  * primary-keys[key1:key2:...:keyn]=va1:va2:...:van,vb1:vb2:...:vbn
+  * ~primary-keys[key1:key2:...:keyn]=va1:va2:...:van,vb1:vb2:...:vbn
+  * composite-filter[key1:key2:...:keyn][op1:op2:...:opn]=va1:va2:...:van,vb1:vb2:...:vbn
+  * ~composite-filter[key1:key2:...:keyn][op1:op2:...:opn]=va1:va2:...:van,vb1:vb2:...:vbn
+
 0.6.0 (2020-05-15)
 ------------------
 
